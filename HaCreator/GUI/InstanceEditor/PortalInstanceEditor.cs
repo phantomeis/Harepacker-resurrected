@@ -30,12 +30,20 @@ namespace HaCreator.GUI.InstanceEditor
         {
             InitializeComponent();
             int portalTypes = Program.InfoManager.PortalTypeById.Count;
-            object[] portals = new object[portalTypes];
+            ArrayList portals = new ArrayList();
             for (int i = 0; i < portalTypes; i++)
             {
-                portals[i] = Tables.PortalTypeNames[Program.InfoManager.PortalTypeById[i]];
+                try
+                {
+                    portals.Add(Tables.PortalTypeNames[Program.InfoManager.PortalTypeById[i]]);
+                }
+                catch(KeyNotFoundException) 
+                { 
+                    continue; 
+                }
             }
-            ptComboBox.Items.AddRange(portals);
+            
+            ptComboBox.Items.AddRange(portals.ToArray());
             this.item = item;
 
             rowMan = new ControlRowManager(new ControlRow[] { 
@@ -503,11 +511,12 @@ namespace HaCreator.GUI.InstanceEditor
         {
             lock (item.Board.ParentControl)
             {
-                if (portalImageList.SelectedItem == null) 
+                if (portalImageList.SelectedItem == null)
                     return;
-                else if ((string)portalImageList.SelectedItem == "default") 
-                    portalImageBox.Image = new Bitmap(Program.InfoManager.GamePortals[Program.InfoManager.PortalTypeById[ptComboBox.SelectedIndex]].DefaultImage);
-                else 
+                else if ((string)portalImageList.SelectedItem == "default")
+                    return;
+                //portalImageBox.Image = new Bitmap(Program.InfoManager.GamePortals[Program.InfoManager.PortalTypeById[ptComboBox.SelectedIndex]].DefaultImage);
+                else
                     portalImageBox.Image = new Bitmap(Program.InfoManager.GamePortals[Program.InfoManager.PortalTypeById[ptComboBox.SelectedIndex]][(string)portalImageList.SelectedItem]);
             }
         }
@@ -520,14 +529,15 @@ namespace HaCreator.GUI.InstanceEditor
 
         private void btnBrowseMap_Click(object sender, EventArgs e)
         {
-            int? mapId = MapBrowser.Show();
-            if (mapId != null) tmBox.Value = (int)mapId;
+            LoadMapSelector selector = new LoadMapSelector(tmBox);
+            selector.ShowDialog();
         }
 
         private void btnBrowseTn_Click(object sender, EventArgs e)
         {
             string tn = TnSelector.Show(item.Board);
-            if (tn != null) tnBox.Text = tn;
+            if (tn != null) 
+                tnBox.Text = tn;
         }
     }
 

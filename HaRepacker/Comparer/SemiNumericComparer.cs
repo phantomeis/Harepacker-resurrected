@@ -1,27 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Media;
 
 namespace HaRepacker.Comparer
 {
     /// <summary>
     /// Comparer for string names. in ascending order
+    /// Compares by Numeric when possible, so it does not sort by name.
     /// </summary>
-    public class SemiNumericComparer : IComparer<Tuple<string, int, PointF, ImageSource>>
+    public class SemiNumericComparer : IComparer<string>
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int Compare(Tuple<string, int, PointF, ImageSource> s1, Tuple<string, int, PointF, ImageSource> s2)
+        public int Compare(string s1Text, string s2Text)
         {
-            string s1Text = s1.Item1;
-            string s2Text = s2.Item1;
-
-            bool isS1Numeric = IsNumeric(s1Text);
-            bool isS2Numeric = IsNumeric(s2Text);
+            bool isS1Numeric = IsNumericString(s1Text);
+            bool isS2Numeric = IsNumericString(s2Text);
 
             if (isS1Numeric && isS2Numeric)
             {
@@ -43,8 +39,9 @@ namespace HaRepacker.Comparer
             return string.Compare(s1Text, s2Text, true);
         }
 
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool IsNumeric(string value)
+        private static bool IsNumericString(string value)
         {
             int parseInt = 0;
             return Int32.TryParse(value, out parseInt);

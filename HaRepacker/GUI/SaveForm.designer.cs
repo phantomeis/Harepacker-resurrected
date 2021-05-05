@@ -33,23 +33,25 @@ namespace HaRepacker.GUI
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SaveForm));
             this.encryptionBox = new System.Windows.Forms.ComboBox();
             this.saveButton = new System.Windows.Forms.Button();
-            this.versionBox = new IntegerInput();
+            this.versionBox = new HaRepacker.GUI.Input.IntegerInput();
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // encryptionBox
             // 
+            this.encryptionBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.encryptionBox.FormattingEnabled = true;
             resources.ApplyResources(this.encryptionBox, "encryptionBox");
             this.encryptionBox.Name = "encryptionBox";
+            this.encryptionBox.SelectedIndexChanged += new System.EventHandler(this.encryptionBox_SelectedIndexChanged);
             // 
             // saveButton
             // 
             resources.ApplyResources(this.saveButton, "saveButton");
             this.saveButton.Name = "saveButton";
             this.saveButton.UseVisualStyleBackColor = true;
-            this.saveButton.Click += new System.EventHandler(this.saveButton_Click);
+            this.saveButton.Click += new System.EventHandler(this.SaveButton_Click);
             // 
             // versionBox
             // 

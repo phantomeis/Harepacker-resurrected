@@ -26,7 +26,7 @@ namespace HaCreator.MapEditor
     {
         protected XNA.Vector3 position;
         private Dictionary<BoardItem, XNA.Point> boundItems = new Dictionary<BoardItem, XNA.Point>();//key = BoardItem; value = point (distance)
-        private List<BoardItem> boundItemsList = new List<BoardItem>();
+        private readonly List<BoardItem> boundItemsList = new List<BoardItem>();
         private BoardItem parent = null;
         private bool selected = false;
         protected Board board;
@@ -95,19 +95,6 @@ namespace HaCreator.MapEditor
                 Selected = false;
                 board.BoardItems.Remove(this);
             }
-        }
-
-        public static Texture2D TextureFromBitmap(GraphicsDevice device, System.Drawing.Bitmap bitmap)
-        {
-            Texture2D texture;
-            using (System.IO.MemoryStream s = new System.IO.MemoryStream())
-            {
-                bitmap.Save(s, System.Drawing.Imaging.ImageFormat.Png);
-                s.Seek(0, System.IO.SeekOrigin.Begin);
-                texture = Texture2D.FromStream(device, s);
-                //texture = Texture2D.FromFile(device, s);
-            }
-            return texture;
         }
 
         public virtual void BindItem(BoardItem item, XNA.Point distance)

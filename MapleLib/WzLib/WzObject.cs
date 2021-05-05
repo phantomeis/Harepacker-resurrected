@@ -25,8 +25,10 @@ namespace MapleLib.WzLib
 	/// </summary>
 	public abstract class WzObject : IDisposable
 	{
-        private object tag = null;
-        private object tag2 = null;
+        private object hcTag = null;
+        private object hcTag_spine = null;
+        private object msTag = null;
+        private object msTag_spine = null;
         private object tag3 = null;
 
 		public abstract void Dispose();
@@ -75,6 +77,24 @@ namespace MapleLib.WzLib
             }
         }
 
+
+        /// <summary>
+        /// Gets the top most WZObject directory (i.e Map.wz, Skill.wz)
+        /// </summary>
+        /// <returns></returns>
+        public WzObject GetTopMostWzDirectory()
+        {
+            WzObject parent = this.Parent;
+            if (parent == null)
+                return this; // this
+
+            while (parent.Parent != null )
+            {
+                parent = parent.Parent;
+            }
+            return parent;
+        }
+
         public string FullPath
         {
             get
@@ -96,8 +116,18 @@ namespace MapleLib.WzLib
         /// </summary>
         public virtual object HCTag
         {
-            get { return tag; }
-            set { tag = value; }
+            get { return hcTag; }
+            set { hcTag = value; }
+        }
+
+
+        /// <summary>
+        /// Used in HaCreator to save already parsed spine images
+        /// </summary>
+        public virtual object HCTagSpine
+        {
+            get { return hcTag_spine; }
+            set { hcTag_spine = value; }
         }
 
         /// <summary>
@@ -105,8 +135,17 @@ namespace MapleLib.WzLib
         /// </summary>
         public virtual object MSTag
         {
-            get { return tag2; }
-            set { tag2 = value; }
+            get { return msTag; }
+            set { msTag = value; }
+        }
+
+        /// <summary>
+        /// Used in HaCreator's MapSimulator to save already parsed spine objects
+        /// </summary>
+        public virtual object MSTagSpine
+        {
+            get { return msTag_spine; }
+            set { msTag_spine = value; }
         }
 
         /// <summary>

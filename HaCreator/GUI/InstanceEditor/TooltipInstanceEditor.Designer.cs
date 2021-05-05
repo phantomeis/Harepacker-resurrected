@@ -66,7 +66,7 @@
             0,
             -2147483648});
             this.xInput.Name = "xInput";
-            this.xInput.Size = new System.Drawing.Size(50, 20);
+            this.xInput.Size = new System.Drawing.Size(50, 22);
             this.xInput.TabIndex = 0;
             // 
             // label1
@@ -74,7 +74,7 @@
             this.label1.AutoSize = true;
             this.label1.Location = new System.Drawing.Point(90, 55);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(14, 13);
+            this.label1.Size = new System.Drawing.Size(13, 13);
             this.label1.TabIndex = 2;
             this.label1.Text = "X";
             // 
@@ -83,7 +83,7 @@
             this.label2.AutoSize = true;
             this.label2.Location = new System.Drawing.Point(162, 55);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(14, 13);
+            this.label2.Size = new System.Drawing.Size(12, 13);
             this.label2.TabIndex = 4;
             this.label2.Text = "Y";
             // 
@@ -101,7 +101,7 @@
             0,
             -2147483648});
             this.yInput.Name = "yInput";
-            this.yInput.Size = new System.Drawing.Size(50, 20);
+            this.yInput.Size = new System.Drawing.Size(50, 22);
             this.yInput.TabIndex = 1;
             // 
             // okButton
@@ -138,7 +138,7 @@
             this.useTitleBox.AutoSize = true;
             this.useTitleBox.Location = new System.Drawing.Point(21, 119);
             this.useTitleBox.Name = "useTitleBox";
-            this.useTitleBox.Size = new System.Drawing.Size(46, 17);
+            this.useTitleBox.Size = new System.Drawing.Size(48, 17);
             this.useTitleBox.TabIndex = 8;
             this.useTitleBox.Text = "Title";
             this.useTitleBox.UseVisualStyleBackColor = true;
@@ -149,7 +149,7 @@
             this.useDescBox.AutoSize = true;
             this.useDescBox.Location = new System.Drawing.Point(21, 220);
             this.useDescBox.Name = "useDescBox";
-            this.useDescBox.Size = new System.Drawing.Size(51, 17);
+            this.useDescBox.Size = new System.Drawing.Size(50, 17);
             this.useDescBox.TabIndex = 10;
             this.useDescBox.Text = "Desc";
             this.useDescBox.UseVisualStyleBackColor = true;
@@ -166,8 +166,8 @@
             // 
             // TooltipInstanceEditor
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.ClientSize = new System.Drawing.Size(354, 323);
             this.Controls.Add(this.useDescBox);
             this.Controls.Add(this.descBox);

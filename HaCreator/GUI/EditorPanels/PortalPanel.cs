@@ -4,9 +4,9 @@
 * License, v. 2.0. If a copy of the MPL was not distributed with this
 * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+using HaCreator.CustomControls;
 using HaCreator.MapEditor;
 using HaCreator.MapEditor.Info;
-using HaCreator.ThirdParty;
 using MapleLib.WzLib.WzStructure.Data;
 using System;
 using System.Collections.Generic;
@@ -21,22 +21,32 @@ using WeifenLuo.WinFormsUI.Docking;
 
 namespace HaCreator.GUI.EditorPanels
 {
-    public partial class PortalPanel : DockContent
+    public partial class PortalPanel : UserControl
     {
-        HaCreatorStateManager hcsm;
+        private HaCreatorStateManager hcsm;
 
-        public PortalPanel(HaCreatorStateManager hcsm)
+        public PortalPanel()
+        {
+            InitializeComponent();
+        }
+
+        public void Initialize(HaCreatorStateManager hcsm)
         {
             this.hcsm = hcsm;
-            InitializeComponent();
 
             foreach (string pt in Program.InfoManager.PortalTypeById)
             {
                 PortalInfo pInfo = PortalInfo.GetPortalInfoByType(pt);
-                ImageViewer item = portalImageContainer.Add(pInfo.Image, Tables.PortalTypeNames[pt], true);
-                item.Tag = pInfo;
-                item.MouseDown += new MouseEventHandler(portal_MouseDown);
-                item.MouseUp += new MouseEventHandler(ImageViewer.item_MouseUp);
+                try
+                {
+                    ImageViewer item = portalImageContainer.Add(pInfo.Image, Tables.PortalTypeNames[pt], true);
+                    item.Tag = pInfo;
+                    item.MouseDown += new MouseEventHandler(portal_MouseDown);
+                    item.MouseUp += new MouseEventHandler(ImageViewer.item_MouseUp);
+                }
+                catch (KeyNotFoundException) 
+                { 
+                }
             }
         }
 

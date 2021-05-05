@@ -20,16 +20,18 @@ namespace HaCreator.MapEditor.Info
 {
     public class NpcInfo : MapleExtractableInfo
     {
-        private string id;
-        private string name;
+        private readonly string id;
+        private readonly string name;
 
-        private WzImage LinkedImage;
+        private WzImage _LinkedWzImage;
 
         public NpcInfo(Bitmap image, System.Drawing.Point origin, string id, string name, WzObject parentObject)
             : base(image, origin, parentObject)
         {
             this.id = id;
             this.name = name;
+            if(image!=null && image.Width==1 && image.Height==1)
+                image = global::HaCreator.Properties.Resources.placeholder; 
         }
 
         private void ExtractPNGFromImage(WzImage image)
@@ -37,8 +39,12 @@ namespace HaCreator.MapEditor.Info
             WzCanvasProperty npcImage = WzInfoTools.GetNpcImage(image);
             if (npcImage != null)
             {
-                Image = npcImage.PngProperty.GetPNG(false);
-                Origin = WzInfoTools.VectorToSystemPoint((WzVectorProperty)npcImage["origin"]);
+                Image = npcImage.GetLinkedWzCanvasBitmap();
+                if(Image.Width==1 && Image.Height == 1)
+                {
+                    Image = global::HaCreator.Properties.Resources.placeholder;
+                }
+                Origin = WzInfoTools.PointFToSystemPoint(npcImage.GetCanvasOriginPosition());
             }
             else
             {
@@ -49,16 +55,10 @@ namespace HaCreator.MapEditor.Info
 
         public override void ParseImage()
         {
-            WzStringProperty link = (WzStringProperty)((WzSubProperty)((WzImage)ParentObject)["info"])["link"];
-            if (link != null)
-            {
-                LinkedImage = (WzImage)Program.WzManager["npc"][link.Value + ".img"];
-                ExtractPNGFromImage(LinkedImage);
-            }
+            if (LinkedWzImage != null) // attempt to load from here too
+                ExtractPNGFromImage(LinkedWzImage);
             else
-            {
                 ExtractPNGFromImage((WzImage)ParentObject);
-            }
         }
 
         public static NpcInfo Get(string id)
@@ -95,26 +95,33 @@ namespace HaCreator.MapEditor.Info
 
         public string ID
         {
-            get
-            {
-                return id;
-            }
-            set
-            {
-                this.id = value;
-            }
+            get { return id; }
+            private set { }
         }
 
         public string Name
         {
-            get
-            {
-                return name;
+            get { return name; }
+            private set {  }
+        }
+
+        /// <summary>
+        /// The source WzImage of the reactor or default
+        /// </summary>
+        public WzImage LinkedWzImage
+        {
+            get {
+                if (_LinkedWzImage == null)
+                {
+                    WzStringProperty link = (WzStringProperty)((WzSubProperty)((WzImage)ParentObject)["info"])["link"];
+                    if (link != null)
+                        _LinkedWzImage = (WzImage)Program.WzManager["npc"][link.Value + ".img"];
+                    else
+                        _LinkedWzImage = (WzImage)Program.WzManager["npc"][id + ".img"]; // default
+                }
+                return _LinkedWzImage; 
             }
-            set
-            {
-                this.name = value;
-            }
+            set { this._LinkedWzImage = value; }
         }
     }
 }

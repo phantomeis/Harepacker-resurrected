@@ -70,7 +70,7 @@ namespace HaCreator.GUI
                 statusLabel.Text = "Must enter a number";
                 saveButton.Enabled = false;
             }
-            else if (id < WzConstants.MinMap || id > WzConstants.MaxMap)
+            else if (id < MapConstants.MinMap || id > MapConstants.MaxMap)
             {
                 statusLabel.Text = "Out of range";
                 saveButton.Enabled = false;
@@ -109,7 +109,7 @@ namespace HaCreator.GUI
             else
             {
                 board.MapInfo.strMapName = idBox.Text;
-                board.TabPage.Text = board.MapInfo.strMapName;
+                ((TabItemContainer)board.TabPage.Tag).Text = board.MapInfo.strMapName;
                 saver.ChangeMapTypeAndID(-1, type);
                 saver.SaveMapImage();
                 MessageBox.Show("Saved map: " + board.MapInfo.strMapName);

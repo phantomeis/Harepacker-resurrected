@@ -11,17 +11,31 @@ using System.IO;
 using MapleLib.WzLib.Util;
 using System.Windows.Threading;
 using System.Threading.Tasks;
-using HaRepacker.GUI.Panels;
-using HaRepacker.Comparer;
 using System.Diagnostics;
+using HaRepacker.Comparer;
+using HaRepacker.GUI.Panels;
 
 namespace HaRepacker
 {
     public class WzFileManager
     {
-        private static TreeViewNodeSorter SORTER = new TreeViewNodeSorter();
+        #region Constants
+        public static readonly string[] MOB_WZ_FILES = { "Mob", "Mob001", "Mob2" };
+        public static readonly string[] MAP_WZ_FILES = { "Map", "Map001",
+            "Map002", //kms now stores main map key here
+            "Map2" };
+        public static readonly string[] SOUND_WZ_FILES = { "Sound", "Sound001" };
 
-        private List<WzFile> wzFiles = new List<WzFile>();
+        public static readonly string[] COMMON_MAPLESTORY_DIRECTORY = new string[] {
+            @"C:\Nexon\MapleStory",
+            @"C:\Nexon\MapleStoryTest",
+            @"C:\Program Files\WIZET\MapleStory",
+            @"C:\MapleStory",
+            @"C:\Program Files (x86)\Wizet\MapleStorySEA"
+        };
+        #endregion
+
+        private readonly List<WzFile> wzFiles = new List<WzFile>();
 
         public WzFileManager()
         {
@@ -45,13 +59,20 @@ namespace HaRepacker
                 {
                     wzFiles.Add(f);
                 }
-                f.ParseWzFile();
+                WzFileParseStatus parseStatus = f.ParseWzFile();
+                if (parseStatus != WzFileParseStatus.Success)
+                {
+                    file = null;
+                    Warning.Error("Error initializing " + Path.GetFileName(path) + " (" + parseStatus.GetErrorDescription() + ").");
+                    return false;
+                }
+
                 file = f;
                 return true;
             }
             catch (Exception e)
             {
-                Warning.Error("Error initializing " + Path.GetFileName(path) + " (" + e.Message + ").\r\nCheck that the directory is valid and the file is not in use.");
+                Warning.Error("Error initializing " + Path.GetFileName(path) + " (" + e.Message + ").\r\nAlso, check that the directory is valid and the file is not in use.");
                 file = null;
                 return false;
             }
@@ -63,7 +84,9 @@ namespace HaRepacker
             {
                 if (wzFiles.Contains(file)) // check again within scope
                 {
-                    ((WzNode)file.HRTag).Delete();
+                    file.Dispose();
+
+                    ((WzNode)file.HRTag).DeleteWzNode();
                     wzFiles.Remove(file);
                 }
             }
@@ -90,7 +113,9 @@ namespace HaRepacker
             else
                 UnloadWzFile(file);
 
-            LoadWzFile(path, encVersion, (short)-1, panel, currentDispatcher);
+            WzFile loadedWzFile = LoadWzFile(path, encVersion, (short)-1);
+            if (loadedWzFile != null)
+                Program.WzFileManager.AddLoadedWzFileToMainPanel(loadedWzFile, panel, currentDispatcher);
         }
 
         /// <summary>
@@ -102,32 +127,35 @@ namespace HaRepacker
         /// <returns></returns>
         public WzImage LoadDataWzHotfixFile(string path, WzMapleVersion encVersion, MainPanel panel)
         {
-            FileStream fs = File.Open(path, FileMode.Open);
+            FileStream fs = File.Open(path, FileMode.Open); // dont close this file stream until it is unloaded from memory
 
             WzImage img = new WzImage(Path.GetFileName(path), fs, encVersion);
             img.ParseImage(true);
 
             WzNode node = new WzNode(img);
+
+            panel.DataTree.BeginUpdate();
             panel.DataTree.Nodes.Add(node);
+            panel.DataTree.EndUpdate();
+
             if (Program.ConfigurationManager.UserSettings.Sort)
             {
                 SortNodesRecursively(node);
             }
             return img;
-
         }
 
         /// <summary>
         /// Load a WZ file from path
         /// </summary>
         /// <param name="path"></param>
-        /// <param name="panel"></param>
         /// <returns></returns>
-        public WzFile LoadWzFile(string path, MainPanel panel)
+        public WzFile LoadWzFile(string path)
         {
             short fileVersion = -1;
             bool isList = WzTool.IsListFile(path);
-            return LoadWzFile(path, WzTool.DetectMapleVersion(path, out fileVersion), fileVersion, panel);
+
+            return LoadWzFile(path, WzTool.DetectMapleVersion(path, out fileVersion), fileVersion);
         }
 
         /// <summary>
@@ -138,9 +166,9 @@ namespace HaRepacker
         /// <param name="panel"></param>
         /// <param name="currentDispatcher">Dispatcher thread</param>
         /// <returns></returns>
-        public WzFile LoadWzFile(string path, WzMapleVersion encVersion, MainPanel panel, Dispatcher currentDispatcher = null)
+        public WzFile LoadWzFile(string path, WzMapleVersion encVersion)
         {
-            return LoadWzFile(path, encVersion, (short)-1, panel, currentDispatcher);
+            return LoadWzFile(path, encVersion, (short)-1);
         }
 
         /// <summary>
@@ -153,11 +181,25 @@ namespace HaRepacker
         /// <param name="panel"></param>
         /// <param name="currentDispatcher">Dispatcher thread</param>
         /// <returns></returns>
-        private WzFile LoadWzFile(string path, WzMapleVersion encVersion, short version, MainPanel panel, Dispatcher currentDispatcher = null)
+        private WzFile LoadWzFile(string path, WzMapleVersion encVersion, short version)
         {
             WzFile newFile;
             if (!OpenWzFile(path, encVersion, version, out newFile))
+            {
                 return null;
+            }
+            return newFile;
+        }
+
+        /// <summary>
+        /// Delayed loading of the loaded WzFile to the TreeNode panel
+        /// This primarily fixes some performance issue when loading multiple WZ concurrently.
+        /// </summary>
+        /// <param name="newFile"></param>
+        /// <param name="panel"></param>
+        /// <param name="currentDispatcher"></param>
+        public void AddLoadedWzFileToMainPanel(WzFile newFile, MainPanel panel, Dispatcher currentDispatcher = null)
+        {
             WzNode node = new WzNode(newFile);
 
             // execute in main thread
@@ -165,16 +207,23 @@ namespace HaRepacker
             {
                 currentDispatcher.BeginInvoke((Action)(() =>
                 {
+                    panel.DataTree.BeginUpdate();
+
                     panel.DataTree.Nodes.Add(node);
                     SortNodesRecursively(node);
+
+                    panel.DataTree.EndUpdate();
                 }));
             }
             else
             {
+                panel.DataTree.BeginUpdate();
+
                 panel.DataTree.Nodes.Add(node);
                 SortNodesRecursively(node);
+
+                panel.DataTree.EndUpdate();
             }
-            return newFile;
         }
 
         public void InsertWzFileUnsafe(WzFile f, MainPanel panel)
@@ -184,18 +233,28 @@ namespace HaRepacker
                 wzFiles.Add(f);
             }
             WzNode node = new WzNode(f);
+
+            panel.DataTree.BeginUpdate();
             panel.DataTree.Nodes.Add(node);
+            panel.DataTree.EndUpdate();
 
             SortNodesRecursively(node);
         }
 
-        private void SortNodesRecursively(WzNode parent)
+        /// <summary>
+        /// Sort all nodes that is a parent of 
+        /// </summary>
+        /// <param name="parent"></param>
+        /// <param name="sortFromTheParentNode">Sorts only items in the parent node</param>
+        public void SortNodesRecursively(WzNode parent, bool sortFromTheParentNode = false)
         {
-            if (Program.ConfigurationManager.UserSettings.Sort)
+            if (Program.ConfigurationManager.UserSettings.Sort || sortFromTheParentNode)
             {
-                parent.TreeView.TreeViewNodeSorter = SORTER;
+                parent.TreeView.TreeViewNodeSorter = new TreeViewNodeSorter(sortFromTheParentNode ? parent : null);
 
+                parent.TreeView.BeginUpdate();
                 parent.TreeView.Sort();
+                parent.TreeView.EndUpdate();
             }
         }
 

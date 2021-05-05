@@ -16,23 +16,25 @@ using MapleLib.WzLib.WzStructure;
 using MapleLib.WzLib.WzStructure.Data;
 using MapleLib.Helpers;
 using MapleLib.WzLib.WzProperties;
-using HaCreator.ThirdParty.TabPages;
 using System.Collections;
 using HaCreator.MapEditor.Instance.Shapes;
 using HaCreator.MapEditor.Instance;
 using HaCreator.MapEditor.Info;
 using HaCreator.MapEditor.Instance.Misc;
 using XNA = Microsoft.Xna.Framework;
+using System.Runtime.Remoting.Channels;
+using System.Windows.Media;
+using HaSharedLibrary.Util;
+using HaCreator.GUI;
+using HaCreator.MapSimulator;
+using HaCreator.Exceptions;
+using HaSharedLibrary.Render.DX;
 
 namespace HaCreator.Wz
 {
-    public class MapLoader
+    public static class MapLoader
     {
-        public MapLoader()
-        {
-        }
-
-        public List<string> VerifyMapPropsKnown(WzImage mapImage, bool userless)
+        public static List<string> VerifyMapPropsKnown(WzImage mapImage, bool userless)
         {
             List<string> copyPropNames = new List<string>();
             foreach (WzImageProperty prop in mapImage.WzProperties)
@@ -47,6 +49,7 @@ namespace HaCreator.Wz
                     case "5":
                     case "6":
                     case "7":
+                    case "8": // what? 749080500.img
                     case "info":
                     case "life":
                     case "ladderRope":
@@ -82,9 +85,58 @@ namespace HaCreator.Wz
                             MessageBox.Show("The map you are opening has the feature \"" + prop.Name + "\", which is purposely not supported in the editor.\r\nTo get around this, HaCreator will copy the original feature's data byte-to-byte. This might cause the feature to stop working if it depends on map objects, such as footholds or mobs.");
                         }
                         continue;
+                    case "tokyoBossParty": // Neo Tokyo 802000801.img
+                    case "skyWhale":
+                    case "rectInfo":
+                    case "directionInfo":
+                    case "particle":
+                    case "respawn":
+                    case "enterUI":
+                    case "mobTeleport":
+                    case "climbArea":
+                    case "stigma":
+                    case "monsterDefense":
+                    case "oxQuiz":
+                    case "nodeInfo":
+                    case "onlyUseSkill":
+                    case "replaceUI":
+                    case "rapidStream":
+                    case "areaCtrl":
+                    case "swimArea_Moment":
+                    case "reactorRemove":
+                    case "objectVisibleLevel":
+                    case "bonusRewards":
+                    case "incHealRate":
+                    case "triggersTW":
+                    case "climbArea_Moment":
+                    case "crawlArea":
+                    case "checkPoint":
+                    case "mobKillCountExp":
+                    case "ghostPark":
+                    case "courtshipDance":
+                    case "fishingZone":
+                    case "remoteCharacterEffect":
+                    case "publicTaggedObjectVisible":
+                    case "MirrorFieldData":
+                    case "defenseMob":
+                    case "randomMobGen":
+                    case "unusableSkillArea":
+                    case "flyingAreaData":
+                    case "extinctMO":
+                    case "permittedSkill":
+                    case "WindArea":
+                    case "pocketdrop":
+                    case "footprintData":
+                    case "illuminantCluster": // 450016030.img
+                    case "property": // 450016110.img
+                    case "languageSchool": // 702090101.img
+                    case "languageSchoolQuizTime":
+                    case "languageSchoolMobSummonItemID":
+                        continue;
+
                     default:
-                        string loggerSuffix = ", map " + mapImage.Name + ((mapImage.WzFileParent != null) ? (" of version " + Enum.GetName(typeof(WzMapleVersion), mapImage.WzFileParent.MapleVersion) + ", v" + mapImage.WzFileParent.Version.ToString()) : "");
-                        string error = "Unknown property " + prop.Name + loggerSuffix;
+                        string error = string.Format("[MapLoader] Unknown field property '{0}', {1}", prop.Name, mapImage.ToString() /*overrides see WzImage.ToString()*/);
+
                         MapleLib.Helpers.ErrorLogger.Log(ErrorLevel.MissingFeature, error);
                         copyPropNames.Add(prop.Name);
                         break;
@@ -93,12 +145,14 @@ namespace HaCreator.Wz
             return copyPropNames;
         }
 
-        public MapType GetMapType(WzImage mapImage)
+        public static MapType GetMapType(WzImage mapImage)
         {
             switch (mapImage.Name)
             {
-                case "MapLogin1.img":
                 case "MapLogin.img":
+                case "MapLogin1.img":
+                case "MapLogin2.img":
+                case "MapLogin3.img":
                     return MapType.MapLogin;
                 case "CashShopPreview.img":
                     return MapType.CashShopPreview;
@@ -122,6 +176,7 @@ namespace HaCreator.Wz
                         int x2 = InfoTool.GetInt(fh["x2"]);
                         int y1 = InfoTool.GetInt(fh["y1"]);
                         int y2 = InfoTool.GetInt(fh["y2"]);
+
                         if (x1 > mostRight) mostRight = x1;
                         if (x1 < mostLeft) mostLeft = x1;
                         if (x2 > mostRight) mostRight = x2;
@@ -145,14 +200,19 @@ namespace HaCreator.Wz
             return true;
         }
 
-        public void LoadLayers(WzImage mapImage, Board mapBoard)
+        public static void LoadLayers(WzImage mapImage, Board mapBoard)
         {
-            for (int layer = 0; layer <= 7; layer++)
+            for (int layer = 0; layer <= MapConstants.MaxMapLayers; layer++)
             {
                 WzSubProperty layerProp = (WzSubProperty)mapImage[layer.ToString()];
-                WzImageProperty tSprop = layerProp["info"]["tS"];
+                if (layerProp == null)
+                    continue; // most maps only have 7 layers.
+
+                WzImageProperty tSprop = layerProp["info"]?["tS"];
                 string tS = null;
-                if (tSprop != null) tS = InfoTool.GetString(tSprop);
+                if (tSprop != null) 
+                    tS = InfoTool.GetString(tSprop);
+
                 foreach (WzImageProperty obj in layerProp["obj"].WzProperties)
                 {
                     int x = InfoTool.GetInt(obj["x"]);
@@ -185,6 +245,8 @@ namespace HaCreator.Wz
                     }
                     bool flip = InfoTool.GetBool(obj["f"]);
                     ObjectInfo objInfo = ObjectInfo.Get(oS, l0, l1, l2);
+                    if (objInfo == null)
+                        continue;
                     Layer l = mapBoard.Layers[layer];
                     mapBoard.BoardItems.TileObjs.Add((LayeredItem)objInfo.CreateInstance(l, mapBoard, x, y, z, zM, r, hide, reactor, flow, rx, ry, cx, cy, name, tags, questInfo, flip, false));
                     l.zMList.Add(zM);
@@ -198,6 +260,7 @@ namespace HaCreator.Wz
                     string u = InfoTool.GetString(tile["u"]);
                     int no = InfoTool.GetInt(tile["no"]);
                     Layer l = mapBoard.Layers[layer];
+
                     TileInfo tileInfo = TileInfo.Get(tS, u, no.ToString());
                     mapBoard.BoardItems.TileObjs.Add((LayeredItem)tileInfo.CreateInstance(l, mapBoard, x, y, int.Parse(tile.Name), zM, false, false));
                     l.zMList.Add(zM);
@@ -205,10 +268,27 @@ namespace HaCreator.Wz
             }
         }
 
-        public void LoadLife(WzImage mapImage, Board mapBoard)
+        public static void LoadLife(WzImage mapImage, Board mapBoard)
         {
             WzImageProperty lifeParent = mapImage["life"];
-            if (lifeParent == null) return;
+            if (lifeParent == null) 
+                return;
+
+            if (InfoTool.GetOptionalBool(lifeParent["isCategory"]) == true) // cant handle this for now.  Azwan 262021001.img TODO
+            {
+                // - 170
+                // -- 5
+                // -- 4
+                // -- 3
+                // -- 2
+                // -- 1
+                // -- 0
+                // - 130
+                // - 85
+                // - 45
+                return;
+            }
+
             foreach (WzSubProperty life in lifeParent.WzProperties)
             {
                 string id = InfoTool.GetString(life["id"]);
@@ -245,7 +325,7 @@ namespace HaCreator.Wz
             }
         }
 
-        public void LoadReactors(WzImage mapImage, Board mapBoard)
+        public static void LoadReactors(WzImage mapImage, Board mapBoard)
         {
             WzSubProperty reactorParent = (WzSubProperty)mapImage["reactor"];
             if (reactorParent == null) return;
@@ -261,15 +341,24 @@ namespace HaCreator.Wz
             }
         }
 
-        private void LoadChairs(WzImage mapImage, Board mapBoard)
+        public static void LoadChairs(WzImage mapImage, Board mapBoard)
         {
             WzSubProperty chairParent = (WzSubProperty)mapImage["seat"];
             if (chairParent != null)
             {
-                foreach (WzVectorProperty chair in chairParent.WzProperties)
+                int i = 0;
+                WzImageProperty chairImage;
+                while ((chairImage = chairParent[i.ToString()]) != null)
                 {
-                    mapBoard.BoardItems.Chairs.Add(new Chair(mapBoard, chair.X.Value, chair.Y.Value));
+                    if (chairImage is WzVectorProperty chair)
+                    {
+                        mapBoard.BoardItems.Chairs.Add(new Chair(mapBoard, chair.X.Value, chair.Y.Value));
+                    }
+
+                    i++;
                 }
+                // Other WzSubProperty exist in maps like 330000100.img, FriendsStory
+                // 'sitDir' 'offset'
             }
             mapBoard.BoardItems.Chairs.Sort(new Comparison<Chair>(
                     delegate(Chair a, Chair b)
@@ -305,7 +394,7 @@ namespace HaCreator.Wz
             }
         }
 
-        public void LoadRopes(WzImage mapImage, Board mapBoard)
+        public static void LoadRopes(WzImage mapImage, Board mapBoard)
         {
             WzSubProperty ropeParent = (WzSubProperty)mapImage["ladderRope"];
             foreach (WzSubProperty rope in ropeParent.WzProperties)
@@ -320,7 +409,7 @@ namespace HaCreator.Wz
             }
         }
 
-        private bool IsAnchorPrevOfFoothold(FootholdAnchor a, FootholdLine x)
+        private static bool IsAnchorPrevOfFoothold(FootholdAnchor a, FootholdLine x)
         {
             int prevnum = x.prev;
             int nextnum = x.next;
@@ -340,7 +429,7 @@ namespace HaCreator.Wz
             throw new Exception("Could not match anchor to foothold");
         }
 
-        public void LoadFootholds(WzImage mapImage, Board mapBoard)
+        public static void LoadFootholds(WzImage mapImage, Board mapBoard)
         {
             List<FootholdAnchor> anchors = new List<FootholdAnchor>();
             WzSubProperty footholdParent = (WzSubProperty)mapImage["foothold"];
@@ -447,7 +536,7 @@ namespace HaCreator.Wz
             }
         }
 
-        public void LoadPortals(WzImage mapImage, Board mapBoard)
+        public static void LoadPortals(WzImage mapImage, Board mapBoard)
         {
             WzSubProperty portalParent = (WzSubProperty)mapImage["portal"];
             foreach (WzSubProperty portal in portalParent.WzProperties)
@@ -467,11 +556,12 @@ namespace HaCreator.Wz
                 int? delay = InfoTool.GetOptionalInt(portal["delay"]);
                 MapleBool hideTooltip = InfoTool.GetOptionalBool(portal["hideTooltip"]);
                 MapleBool onlyOnce = InfoTool.GetOptionalBool(portal["onlyOnce"]);
+
                 mapBoard.BoardItems.Portals.Add(PortalInfo.GetPortalInfoByType(pt).CreateInstance(mapBoard, x, y, pn, tn, tm, script, delay, hideTooltip, onlyOnce, horizontalImpact, verticalImpact, image, hRange, vRange));
             }
         }
 
-        public void LoadToolTips(WzImage mapImage, Board mapBoard)
+        public static void LoadToolTips(WzImage mapImage, Board mapBoard)
         {
             WzSubProperty tooltipsParent = (WzSubProperty)mapImage["ToolTip"];
             if (tooltipsParent == null)
@@ -497,8 +587,12 @@ namespace HaCreator.Wz
                 WzSubProperty tooltipString = (WzSubProperty)tooltipStrings[num];
                 WzSubProperty tooltipProp = (WzSubProperty)tooltipsParent[num];
                 WzSubProperty tooltipChar = (WzSubProperty)tooltipsParent[num + "char"];
-                if (tooltipString == null && tooltipProp == null) break;
-                if (tooltipString == null ^ tooltipProp == null) continue;
+
+                if (tooltipString == null && tooltipProp == null) 
+                    break;
+                if (tooltipString == null ^ tooltipProp == null) 
+                    continue;
+
                 string title = InfoTool.GetOptionalString(tooltipString["Title"]);
                 string desc = InfoTool.GetOptionalString(tooltipString["Desc"]);
                 int x1 = InfoTool.GetInt(tooltipProp["x1"]);
@@ -515,13 +609,14 @@ namespace HaCreator.Wz
                     y1 = InfoTool.GetInt(tooltipChar["y1"]);
                     y2 = InfoTool.GetInt(tooltipChar["y2"]);
                     tooltipPos = new Microsoft.Xna.Framework.Rectangle(x1, y1, x2 - x1, y2 - y1);
+
                     ToolTipChar ttc = new ToolTipChar(mapBoard, tooltipPos, tt);
                     mapBoard.BoardItems.CharacterToolTips.Add(ttc);
                 }
             }
         }
 
-        public void LoadBackgrounds(WzImage mapImage, Board mapBoard)
+        public static void LoadBackgrounds(WzImage mapImage, Board mapBoard)
         {
             WzSubProperty bgParent = (WzSubProperty)mapImage["back"];
             WzSubProperty bgProp;
@@ -537,20 +632,34 @@ namespace HaCreator.Wz
                 int a = InfoTool.GetInt(bgProp["a"]);
                 BackgroundType type = (BackgroundType)InfoTool.GetInt(bgProp["type"]);
                 bool front = InfoTool.GetBool(bgProp["front"]);
+                int screenMode = InfoTool.GetInt(bgProp["screenMode"], (int) RenderResolution.Res_All);
+                string spineAni = InfoTool.GetString(bgProp["spineAni"]);
+                bool spineRandomStart = InfoTool.GetBool(bgProp["spineRandomStart"]);
                 bool? flip_t = InfoTool.GetOptionalBool(bgProp["f"]);
                 bool flip = flip_t.HasValue ? flip_t.Value : false;
                 string bS = InfoTool.GetString(bgProp["bS"]);
                 bool ani = InfoTool.GetBool(bgProp["ani"]);
                 string no = InfoTool.GetInt(bgProp["no"]).ToString();
-                BackgroundInfo bgInfo = BackgroundInfo.Get(bS, ani, no);
+
+                BackgroundInfoType infoType ;
+                if (spineAni != null)
+                    infoType = BackgroundInfoType.Spine;
+                else if (ani)
+                    infoType = BackgroundInfoType.Animation;
+                else
+                    infoType = BackgroundInfoType.Background;
+
+                BackgroundInfo bgInfo = BackgroundInfo.Get(mapBoard.ParentControl.GraphicsDevice, bS, infoType, no);
                 if (bgInfo == null)
                     continue;
+
                 IList list = front ? mapBoard.BoardItems.FrontBackgrounds : mapBoard.BoardItems.BackBackgrounds;
-                list.Add((BackgroundInstance)bgInfo.CreateInstance(mapBoard, x, y, i, rx, ry, cx, cy, type, a, front, flip));
+                list.Add((BackgroundInstance)bgInfo.CreateInstance(mapBoard, x, y, i, rx, ry, cx, cy, type, a, front, flip, screenMode, 
+                    spineAni, spineRandomStart));
             }
         }
 
-        public void LoadMisc(WzImage mapImage, Board mapBoard)
+        public static void LoadMisc(WzImage mapImage, Board mapBoard)
         {
             // All of the following properties are extremely esoteric features that only appear in a handful of maps. 
             // They are implemented here for the sake of completeness, and being able to repack their maps without corruption.
@@ -567,6 +676,7 @@ namespace HaCreator.Wz
                 Clock clockInstance = new Clock(mapBoard, new Rectangle(InfoTool.GetInt(clock["x"]), InfoTool.GetInt(clock["y"]), InfoTool.GetInt(clock["width"]), InfoTool.GetInt(clock["height"])));
                 mapBoard.BoardItems.Add(clockInstance, false);
             }
+
             if (ship != null)
             {
                 string objPath = InfoTool.GetString(ship["shipObj"]);
@@ -575,6 +685,7 @@ namespace HaCreator.Wz
                 string l0 = objPathParts[objPathParts.Length - 3];
                 string l1 = objPathParts[objPathParts.Length - 2];
                 string l2 = objPathParts[objPathParts.Length - 1];
+
                 ObjectInfo objInfo = ObjectInfo.Get(oS, l0, l1, l2);
                 ShipObject shipInstance = new ShipObject(objInfo, mapBoard, 
                     InfoTool.GetInt(ship["x"]), 
@@ -586,6 +697,7 @@ namespace HaCreator.Wz
                     InfoTool.GetBool(ship["f"]));
                 mapBoard.BoardItems.Add(shipInstance, false);
             }
+
             if (area != null)
             {
                 foreach (WzImageProperty prop in area.WzProperties)
@@ -598,6 +710,7 @@ namespace HaCreator.Wz
                     mapBoard.BoardItems.Add(currArea, false);
                 }
             }
+
             if (healer != null)
             {
                 string objPath = InfoTool.GetString(healer["healer"]);
@@ -606,6 +719,7 @@ namespace HaCreator.Wz
                 string l0 = objPathParts[objPathParts.Length - 3];
                 string l1 = objPathParts[objPathParts.Length - 2];
                 string l2 = objPathParts[objPathParts.Length - 1];
+
                 ObjectInfo objInfo = ObjectInfo.Get(oS, l0, l1, l2);
                 Healer healerInstance = new Healer(objInfo, mapBoard,
                     InfoTool.GetInt(healer["x"]),
@@ -617,6 +731,7 @@ namespace HaCreator.Wz
                     InfoTool.GetInt(healer["rise"]));
                 mapBoard.BoardItems.Add(healerInstance, false);
             }
+
             if (pulley != null)
             {
                 string objPath = InfoTool.GetString(pulley["pulley"]);
@@ -625,12 +740,14 @@ namespace HaCreator.Wz
                 string l0 = objPathParts[objPathParts.Length - 3];
                 string l1 = objPathParts[objPathParts.Length - 2];
                 string l2 = objPathParts[objPathParts.Length - 1];
+
                 ObjectInfo objInfo = ObjectInfo.Get(oS, l0, l1, l2);
                 Pulley pulleyInstance = new Pulley(objInfo, mapBoard,
                     InfoTool.GetInt(pulley["x"]),
                     InfoTool.GetInt(pulley["y"]));
                 mapBoard.BoardItems.Add(pulleyInstance, false);
             }
+
             if (BuffZone != null)
             {
                 foreach (WzImageProperty zone in BuffZone.WzProperties)
@@ -642,10 +759,12 @@ namespace HaCreator.Wz
                     int id = InfoTool.GetInt(zone["ItemID"]);
                     int interval = InfoTool.GetInt(zone["Interval"]);
                     int duration = InfoTool.GetInt(zone["Duration"]);
+
                     BuffZone currZone = new BuffZone(mapBoard, new Rectangle(Math.Min(x1, x2), Math.Min(y1, y2), Math.Abs(x2 - x1), Math.Abs(y2 - y1)), id, interval, duration, zone.Name);
                     mapBoard.BoardItems.Add(currZone, false);
                 }
             }
+
             if (swimArea != null)
             {
                 foreach (WzImageProperty prop in swimArea.WzProperties)
@@ -654,6 +773,7 @@ namespace HaCreator.Wz
                     int x2 = InfoTool.GetInt(prop["x2"]);
                     int y1 = InfoTool.GetInt(prop["y1"]);
                     int y2 = InfoTool.GetInt(prop["y2"]);
+
                     SwimArea currArea = new SwimArea(mapBoard, new Rectangle(Math.Min(x1, x2), Math.Min(y1, y2), Math.Abs(x2 - x1), Math.Abs(y2 - y1)), prop.Name);
                     mapBoard.BoardItems.Add(currArea, false);
                 }
@@ -661,13 +781,48 @@ namespace HaCreator.Wz
             // Some misc items are not implemented here; these are copied byte-to-byte from the original. See VerifyMapPropsKnown for details.
         }
 
-        public ContextMenuStrip CreateStandardMapMenu(EventHandler[] rightClickHandler)
+        public static System.Windows.Controls.ContextMenu CreateStandardMapMenu(System.Windows.RoutedEventHandler[] rightClickHandler)
         {
-            ContextMenuStrip result = new ContextMenuStrip();
-            result.Items.Add(new ToolStripMenuItem("Edit map info...", Properties.Resources.mapEditMenu, rightClickHandler[0]));
-            result.Items.Add(new ToolStripMenuItem("Add VR", Properties.Resources.mapEditMenu, rightClickHandler[1]));
-            result.Items.Add(new ToolStripMenuItem("Add Minimap", Properties.Resources.mapEditMenu, rightClickHandler[2]));
-            return result;
+            System.Windows.Controls.ContextMenu menu = new System.Windows.Controls.ContextMenu();
+            
+            System.Windows.Controls.MenuItem menuItem1 = new System.Windows.Controls.MenuItem();
+            menuItem1.Header = "Edit map info...";
+            menuItem1.Click += rightClickHandler[0];
+            menuItem1.Icon = new System.Windows.Controls.Image
+            {
+                Source = BitmapHelper.Convert(Properties.Resources.mapEditMenu, System.Drawing.Imaging.ImageFormat.Png)
+            };
+
+            System.Windows.Controls.MenuItem menuItem2 = new System.Windows.Controls.MenuItem();
+            menuItem2.Header = "Add VR";
+            menuItem2.Click += rightClickHandler[1];
+            menuItem2.Icon = new System.Windows.Controls.Image
+            {
+                Source = BitmapHelper.Convert(Properties.Resources.mapEditMenu, System.Drawing.Imaging.ImageFormat.Png)
+            };
+
+            System.Windows.Controls.MenuItem menuItem3 = new System.Windows.Controls.MenuItem();
+            menuItem3.Header = "Add Minimap";
+            menuItem3.Click += rightClickHandler[2];
+            menuItem3.Icon = new System.Windows.Controls.Image
+            {
+                Source = BitmapHelper.Convert(Properties.Resources.mapEditMenu, System.Drawing.Imaging.ImageFormat.Png)
+            };
+
+            System.Windows.Controls.MenuItem menuItem4 = new System.Windows.Controls.MenuItem();
+            menuItem4.Header = "Close";
+            menuItem4.Click += rightClickHandler[3];
+            menuItem4.Icon = new System.Windows.Controls.Image
+            {
+                Source = BitmapHelper.Convert(Properties.Resources.mapEditMenu, System.Drawing.Imaging.ImageFormat.Png)
+            };
+
+            menu.Items.Add(menuItem1);
+            menu.Items.Add(menuItem2);
+            menu.Items.Add(menuItem3);
+            menu.Items.Add(menuItem4);
+
+            return menu;
         }
 
         public static void GetMapDimensions(WzImage mapImage, out Rectangle VR, out Point mapCenter, out Point mapSize, out Point minimapCenter, out Point minimapSize, out bool hasVR, out bool hasMinimap)
@@ -728,10 +883,25 @@ namespace HaCreator.Wz
             VR = new Rectangle(vr.Value.X, vr.Value.Y, vr.Value.Width, vr.Value.Height);
         }
 
-        public void CreateMapFromImage(WzImage mapImage, string mapName, string streetName, string categoryName, WzSubProperty strMapProp, PageCollection Tabs, MultiBoard multiBoard, EventHandler[] rightClickHandler)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="mapId">May be -1 if none.</param>
+        /// <param name="mapImage"></param>
+        /// <param name="mapName"></param>
+        /// <param name="streetName"></param>
+        /// <param name="categoryName"></param>
+        /// <param name="strMapProp"></param>
+        /// <param name="Tabs"></param>
+        /// <param name="multiBoard"></param>
+        /// <param name="rightClickHandler"></param>
+        public static void CreateMapFromImage(int mapId, WzImage mapImage, string mapName, string streetName, string categoryName, WzSubProperty strMapProp, System.Windows.Controls.TabControl Tabs, MultiBoard multiBoard, System.Windows.RoutedEventHandler[] rightClickHandler)
         {
-            if (!mapImage.Parsed) mapImage.ParseImage();
+            if (!mapImage.Parsed) 
+                mapImage.ParseImage();
+
             List<string> copyPropNames = VerifyMapPropsKnown(mapImage, false);
+
             MapInfo info = new MapInfo(mapImage, mapName, streetName, categoryName);
             foreach (string copyPropName in copyPropNames)
             {
@@ -763,13 +933,14 @@ namespace HaCreator.Wz
             
             lock (multiBoard)
             {
-                CreateMap(mapName, WzInfoTools.RemoveLeadingZeros(WzInfoTools.RemoveExtension(mapImage.Name)), CreateStandardMapMenu(rightClickHandler), size, center, 8, Tabs, multiBoard);
+                CreateMap(streetName, mapName, mapId, WzInfoTools.RemoveLeadingZeros(WzInfoTools.RemoveExtension(mapImage.Name)), CreateStandardMapMenu(rightClickHandler), size, center, Tabs, multiBoard);
+                
                 Board mapBoard = multiBoard.SelectedBoard;
                 mapBoard.Loading = true; // prevents TS Change callbacks
                 mapBoard.MapInfo = info;
                 if (hasMinimap)
                 {
-                    mapBoard.MiniMap = ((WzCanvasProperty)mapImage["miniMap"]["canvas"]).PngProperty.GetPNG(false);
+                    mapBoard.MiniMap = ((WzCanvasProperty)mapImage["miniMap"]["canvas"]).GetLinkedWzCanvasBitmap();
                     System.Drawing.Point mmPos = new System.Drawing.Point(-minimapCenter.X, -minimapCenter.Y);
                     mapBoard.MinimapPosition = mmPos;
                     mapBoard.MinimapRectangle = new MinimapRectangle(mapBoard, new Rectangle(mmPos.X, mmPos.Y, minimapSize.X, minimapSize.Y));
@@ -778,6 +949,8 @@ namespace HaCreator.Wz
                 {
                     mapBoard.VRRectangle = new VRRectangle(mapBoard, VR);
                 }
+                // ensure that the MultiBoard.GraphicDevice is loaded at this point before loading images
+
                 LoadLayers(mapImage, mapBoard);
                 LoadLife(mapImage, mapBoard);
                 LoadFootholds(mapImage, mapBoard);
@@ -798,33 +971,62 @@ namespace HaCreator.Wz
                 ErrorLogger.SaveToFile("errors.txt");
                 if (UserSettings.ShowErrorsMessage)
                 {
-                    MessageBox.Show("Errors were encountered during the loading process. These errors were saved to \"errors.txt\". Please send this file to the author, either via mail (" + ApplicationSettings.AuthorEmail + ") or from the site you got this software from.\n\n(In the case that this program was not updated in so long that this message is now thrown on every map load, you may cancel this message from the settings)", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                   // MessageBox.Show("Errors were encountered during the loading process. These errors were saved to \"errors.txt\". Please send this file to the author, either via mail (" + ApplicationSettings.AuthorEmail + ") or from the site you got this software from.\n\n(In the case that this program was not updated in so long that this message is now thrown on every map load, you may cancel this message from the settings)", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
                 ErrorLogger.ClearErrors();
             }
         }
 
-        public void CreateMap(string text, string tooltip, ContextMenuStrip menu, Point size, Point center, int layers, HaCreator.ThirdParty.TabPages.PageCollection Tabs, MultiBoard multiBoard)
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="streetName"></param>
+        /// <param name="mapName"></param>
+        /// <param name="mapId">May be -1 if none.</param>
+        /// <param name="tooltip"></param>
+        /// <param name="menu"></param>
+        /// <param name="size"></param>
+        /// <param name="center"></param>
+        /// <param name="layers"></param>
+        /// <param name="Tabs"></param>
+        /// <param name="multiBoard"></param>
+        public static void CreateMap(string streetName, string mapName, int mapId, string tooltip, System.Windows.Controls.ContextMenu menu, Point size, Point center, System.Windows.Controls.TabControl Tabs, MultiBoard multiBoard)
         {
             lock (multiBoard)
             {
-                Board newBoard = multiBoard.CreateBoard(size, center, layers, menu);
+                Board newBoard = multiBoard.CreateBoard(size, center, menu);
                 GenerateDefaultZms(newBoard);
-                HaCreator.ThirdParty.TabPages.TabPage page = new HaCreator.ThirdParty.TabPages.TabPage(text, multiBoard, tooltip, menu);
-                newBoard.TabPage = page;
-                page.Tag = newBoard;
-                Tabs.Add(page);
-                Tabs.CurrentPage = page;
+
+                System.Windows.Controls.TabItem newTabPage = new System.Windows.Controls.TabItem
+                {
+                    Header = string.Format("[{0}] {1}: {2}", mapId == -1 ? "" : mapId.ToString(), streetName, mapName) // Header of the tab
+                };
+                newTabPage.MouseRightButtonUp += (sender, e) =>
+                {
+                    System.Windows.Controls.TabItem senderTab = (System.Windows.Controls.TabItem)sender;
+
+                    menu.PlacementTarget = senderTab;
+                    menu.IsOpen = true;
+                };
+
+                newBoard.TabPage = newTabPage;
+                newTabPage.Tag = new TabItemContainer(mapName, multiBoard, tooltip, menu, newBoard); //newBoard;
+                Tabs.Items.Add(newTabPage);
+                Tabs.SelectedItem = newTabPage;
+
                 multiBoard.SelectedBoard = newBoard;
                 menu.Tag = newBoard;
-                foreach (ToolStripItem item in menu.Items)
-                    item.Tag = newBoard;
+                foreach (System.Windows.Controls.MenuItem item in menu.Items)
+                {
+                    item.Tag = newTabPage;
+                }
             }
         }
 
-        public void CreateMapFromHam(MultiBoard multiBoard, HaCreator.ThirdParty.TabPages.PageCollection Tabs, string data, EventHandler[] rightClickHandler)
+        public static void CreateMapFromHam(MultiBoard multiBoard, System.Windows.Controls.TabControl Tabs, string data, System.Windows.RoutedEventHandler[] rightClickHandler)
         {
-            CreateMap("", "", CreateStandardMapMenu(rightClickHandler), new XNA.Point(), new XNA.Point(), 8, Tabs, multiBoard);
+            CreateMap("", "", -1,  "", CreateStandardMapMenu(rightClickHandler), new XNA.Point(), new XNA.Point(), Tabs, multiBoard);
             multiBoard.SelectedBoard.Loading = true; // Prevent TS Change callbacks while were loading
             lock (multiBoard)
             {
@@ -833,9 +1035,5 @@ namespace HaCreator.Wz
             }
             multiBoard.SelectedBoard.Loading = false;
         }
-    }
-
-    public class NoVRException : Exception
-    {
     }
 }

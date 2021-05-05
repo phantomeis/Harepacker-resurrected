@@ -5,6 +5,8 @@
 * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 using HaCreator.MapEditor.Instance.Shapes;
+using HaCreator.MapSimulator;
+using HaSharedLibrary.Render.DX;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -12,6 +14,7 @@ using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
+using System.Windows.Controls;
 using System.Windows.Forms;
 
 namespace HaCreator.GUI
@@ -25,7 +28,6 @@ namespace HaCreator.GUI
             linewBox.Value = UserSettings.LineWidth;
             dotwBox.Value = UserSettings.DotWidth;
             inactiveaBox.Value = UserSettings.NonActiveAlpha;
-            xgaResolutionCheckbox.Checked = UserSettings.XGAResolution;
             clipBox.Checked = UserSettings.ClipText;
             fixFh.Checked = UserSettings.FixFootholdMispositions;
             invertUpDownBox.Checked = UserSettings.InverseUpDown;
@@ -92,7 +94,6 @@ namespace HaCreator.GUI
             UserSettings.DotWidth = (int)dotwBox.Value;
             MapleDot.OnDotWidthChanged(); // Update DotWidth in dots to avoid requiring a restart
             UserSettings.NonActiveAlpha = (int)inactiveaBox.Value;
-            UserSettings.XGAResolution = xgaResolutionCheckbox.Checked;
             UserSettings.ClipText = clipBox.Checked;
             UserSettings.FixFootholdMispositions = fixFh.Checked;
             UserSettings.InverseUpDown = invertUpDownBox.Checked;
@@ -117,7 +118,9 @@ namespace HaCreator.GUI
             UserSettings.MiscSelectedFill = SystemToXNAColor(miscSelectedColorPicker.Color);
             UserSettings.OriginColor = SystemToXNAColor(originColorPicker.Color);
             UserSettings.MinimapBoundColor = SystemToXNAColor(minimapColorPicker.Color);
-            
+
+            UserSettings.FontName = fontName.Text;
+            UserSettings.FontSize = (int) fontSize.Value;
             UserSettings.HiddenLifeR = (int)rInput.Value;
             UserSettings.Mobrx0Offset = (int)mobrx0Box.Value;
             UserSettings.Mobrx1Offset = (int)mobrx1Box.Value;

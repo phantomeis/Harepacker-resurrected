@@ -1,4 +1,6 @@
-﻿namespace HaCreator.GUI
+﻿using HaCreator.CustomControls;
+
+namespace HaCreator.GUI
 {
     partial class TileSetBrowser
     {
@@ -28,7 +30,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.koolkLVContainer = new HaCreator.ThirdParty.ThumbnailFlowLayoutPanel();
+            this.koolkLVContainer = new ThumbnailFlowLayoutPanel();
             this.SuspendLayout();
             // 
             // koolkLVContainer
@@ -43,10 +45,11 @@
             // 
             // TileSetBrowser
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.ClientSize = new System.Drawing.Size(600, 267);
             this.Controls.Add(this.koolkLVContainer);
+            this.Font = new System.Drawing.Font("Segoe UI", 8.25F);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
             this.KeyPreview = true;
             this.Name = "TileSetBrowser";
@@ -60,6 +63,6 @@
 
         #endregion
 
-        private ThirdParty.ThumbnailFlowLayoutPanel koolkLVContainer;
+        private ThumbnailFlowLayoutPanel koolkLVContainer;
     }
 }

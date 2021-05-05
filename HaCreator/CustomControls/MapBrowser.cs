@@ -16,14 +16,15 @@ using System.Collections;
 using MapleLib.WzLib;
 using MapleLib.WzLib.WzProperties;
 using System.Threading;
+using System.Threading.Tasks;
+using System.Windows.Threading;
 
 namespace HaCreator.CustomControls
 {
     public partial class MapBrowser : UserControl
     {
-        private bool mapLogin1 = false;
         private bool load = false;
-        List<string> maps = new List<string>();
+        private readonly List<string> maps = new List<string>();
 
         public MapBrowser()
         {
@@ -58,58 +59,132 @@ namespace HaCreator.CustomControls
         public delegate void MapSelectChangedDelegate();
         public event MapSelectChangedDelegate SelectionChanged;
 
+        /// <summary>
+        /// Initialise
+        /// </summary>
+        /// <param name="special">True to include cash shop and login.</param>
         public void InitializeMaps(bool special)
         {
-            mapLogin1 = Program.WzManager["ui"]["MapLogin1.img"] != null;
-            foreach (KeyValuePair<string, string> map in Program.InfoManager.Maps)
+            // Logins
+            List<string> mapLogins = new List<string>();
+            for (int i = 0; i < 20; i++) // Not exceeding 20 logins yet.
             {
-                maps.Add(map.Key + " - " + map.Value);
+                string imageName = "MapLogin" + (i == 0 ? "" : i.ToString()) + ".img";
+                WzObject mapLogin = Program.WzManager["ui"][imageName];
+                if (mapLogin == null)
+                    break;
+                mapLogins.Add(imageName);
+            }
+
+            // Maps
+            foreach (KeyValuePair<string, Tuple<string, string>> map in Program.InfoManager.Maps)
+            {
+                maps.Add(string.Format("{0} - {1} : {2}", map.Key, map.Value.Item1, map.Value.Item2));
             }
             maps.Sort();
+
             if (special)
             {
                 maps.Insert(0, "CashShopPreview");
-                maps.Insert(0, "MapLogin");
-                if (mapLogin1)
-                {
-                    maps.Insert(0, "MapLogin1");
-                }
+
+                foreach (string mapLogin in mapLogins)
+                    maps.Insert(0, mapLogin.Replace(".img", ""));
             }
 
             object[] mapsObjs = maps.Cast<object>().ToArray();
             mapNamesBox.Items.AddRange(mapsObjs);
         }
 
+        private string _previousSeachText = string.Empty;
+        private CancellationTokenSource _existingSearchTaskToken = null;
+        /// <summary>
+        /// On search box text changed
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e">May be null</param>
         public void searchBox_TextChanged(object sender, EventArgs e)
         {
             TextBox searchBox = (TextBox)sender;
             string tosearch = searchBox.Text.ToLower();
+
+            if (_previousSeachText == tosearch)
+                return;
+
+            _previousSeachText = tosearch; // set
+
+
+            // Cancel existing task if any
+            if (_existingSearchTaskToken != null && !_existingSearchTaskToken.IsCancellationRequested)
+            {
+                _existingSearchTaskToken.Cancel();
+            }
+
+            // Clear 
             mapNamesBox.Items.Clear();
-            if (tosearch == "")
+            if (tosearch == string.Empty)
             {
                 mapNamesBox.Items.AddRange(maps.Cast<object>().ToArray<object>());
+
+                mapNamesBox_SelectedIndexChanged(null, null);
             }
             else
             {
-                foreach (string map in maps)
+
+                Dispatcher currentDispatcher = Dispatcher.CurrentDispatcher;
+
+                // new task
+                _existingSearchTaskToken = new CancellationTokenSource();
+                var cancellationToken = _existingSearchTaskToken.Token;
+
+                Task t = Task.Run(() =>
                 {
-                    if (map.ToLower().Contains(tosearch))
+                    Thread.Sleep(500); // average key typing speed
+
+                    List<string> mapsFiltered = new List<string>();
+                    foreach (string map in maps)
                     {
-                        mapNamesBox.Items.Add(map);
+                        if (_existingSearchTaskToken.IsCancellationRequested)
+                            return; // stop immediately
+
+                        if (map.ToLower().Contains(tosearch))
+                            mapsFiltered.Add(map);
                     }
-                }
+
+                    currentDispatcher.BeginInvoke(new Action(() =>
+                    {
+                        foreach (string map in mapsFiltered) 
+                        { 
+                            if (_existingSearchTaskToken.IsCancellationRequested)
+                                return; // stop immediately
+
+                            mapNamesBox.Items.Add(map);
+                        }
+
+                        if (mapNamesBox.Items.Count > 0)
+                        {
+                            mapNamesBox.SelectedIndex = 0; // set default selection to reduce clicks
+                        }
+                    }));
+                }, cancellationToken);
+
             }
-            mapNamesBox.SelectedItem = null;
-            mapNamesBox.SelectedIndex = -1;
-            mapNamesBox_SelectedIndexChanged(null, null);
         }
 
+        /// <summary>
+        /// On map selection changed
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void mapNamesBox_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if ((string)mapNamesBox.SelectedItem == "MapLogin" ||
-                (string)mapNamesBox.SelectedItem == "MapLogin1" ||
-                (string)mapNamesBox.SelectedItem == "CashShopPreview" ||
-                mapNamesBox.SelectedItem == null)
+            string selectedName = (string)mapNamesBox.SelectedItem;
+
+            if (selectedName == "MapLogin" ||
+                selectedName == "MapLogin1" ||
+                selectedName == "MapLogin2" ||
+                selectedName == "MapLogin3" ||
+                selectedName == "CashShopPreview" ||
+                selectedName == null)
             {
                 linkLabel.Visible = false;
                 mapNotExist.Visible = false;
@@ -118,9 +193,10 @@ namespace HaCreator.CustomControls
             }
             else
             {
-                string mapid = ((string)mapNamesBox.SelectedItem).Substring(0, 9);
+                string mapid = (selectedName).Substring(0, 9);
                 string mapcat = "Map" + mapid.Substring(0, 1);
-                WzImage mapImage = (WzImage)Program.WzManager["map"]["Map"][mapcat][mapid + ".img"];
+
+                WzImage mapImage = Program.WzManager.FindMapImage(mapid, mapcat);
                 if (mapImage == null)
                 {
                     linkLabel.Visible = false;
@@ -147,7 +223,7 @@ namespace HaCreator.CustomControls
                             WzCanvasProperty minimap = (WzCanvasProperty)mapImage.GetFromPath("miniMap/canvas");
                             if (minimap != null)
                             {
-                                minimapBox.Image = (Image)minimap.PngProperty.GetPNG(false);
+                                minimapBox.Image = (Image)minimap.GetLinkedWzCanvasBitmap();
                             }
                             else
                             {
@@ -156,7 +232,6 @@ namespace HaCreator.CustomControls
                             load = true;
                         }
                     }
-                    GC.Collect();
                 }
             }
             SelectionChanged.Invoke();

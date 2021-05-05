@@ -26,14 +26,17 @@ namespace HaCreator
         public static WzFileManager WzManager;
         public static WzInformationManager InfoManager;
         public static WzSettingsManager SettingsManager;
-        public const string Version = "2.1.1";
         public static bool AbortThreads = false;
         public static bool Restarting;
+
+        public const string APP_NAME = "HaCreator";
+
+        public static HaEditor HaEditorWindow = null;
 
         public static string GetLocalSettingsFolder()
         {
             string appdata = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            string our_folder = Path.Combine(appdata, "HaCreator");
+            string our_folder = Path.Combine(appdata, APP_NAME);
             if (!Directory.Exists(our_folder))
                 Directory.CreateDirectory(our_folder);
             return our_folder;
@@ -55,13 +58,24 @@ namespace HaCreator
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 #endif
 
+            // Localisation
+            CultureInfo ci = GetMainCulture(CultureInfo.CurrentCulture);
+            Properties.Resources.Culture = ci;
+
+            Thread.CurrentThread.CurrentCulture = ci;
+            Thread.CurrentThread.CurrentUICulture = ci;
+
+            CultureInfo.CurrentCulture = ci;
+            CultureInfo.CurrentUICulture = ci;
+            CultureInfo.DefaultThreadCurrentCulture = ci;
+            CultureInfo.DefaultThreadCurrentUICulture = ci;
+
+
             Properties.Resources.Culture = CultureInfo.CurrentCulture;
             InfoManager = new WzInformationManager();
             SettingsManager = new WzSettingsManager(GetLocalSettingsPath(), typeof(UserSettings), typeof(ApplicationSettings), typeof(Microsoft.Xna.Framework.Color));
-            if (SettingsManager.Load())
-            {
-                // do something
-            }
+            SettingsManager.LoadSettings();
+           
             MultiBoard.RecalculateSettings();
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
@@ -80,6 +94,34 @@ namespace HaCreator
                 Application.Restart();
             }
         }
+
+        /// <summary>
+        /// Allows customisation of display text during runtime..
+        /// </summary>
+        /// <param name="ci"></param>
+        /// <returns></returns>
+        private static CultureInfo GetMainCulture(CultureInfo ci)
+        {
+            if (!ci.Name.Contains("-"))
+                return ci;
+            switch (ci.Name.Split("-".ToCharArray())[0])
+            {
+                case "ko":
+                    return new CultureInfo("ko");
+                case "ja":
+                    return new CultureInfo("ja");
+                case "en":
+                    return new CultureInfo("en");
+                case "zh":
+                    if (ci.EnglishName.Contains("Simplified"))
+                        return new CultureInfo("zh-CHS");
+                    else
+                        return new CultureInfo("zh-CHT");
+                default:
+                    return ci;
+            }
+        }
+
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             new ThreadExceptionDialog((Exception)e.ExceptionObject).ShowDialog();

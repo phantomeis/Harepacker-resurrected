@@ -12,21 +12,31 @@ using System.IO;
 using MapleLib.WzLib.Util;
 using System.Diagnostics;
 using HaRepacker.GUI.Panels;
+using MapleLib.MapleCryptoLib;
+using System.Linq;
 
 namespace HaRepacker.GUI
 {
     public partial class SaveForm : Form
     {
-        private WzNode wzNode;
+        private readonly WzNode wzNode;
 
-        private WzFile wzf; // it can either be a WzImage or a WzFile only.
-        private WzImage wzImg; // it can either be a WzImage or a WzFile only.
+        private readonly WzFile wzf; // it can either be a WzImage or a WzFile only.
+        private readonly WzImage wzImg; // it can either be a WzImage or a WzFile only.
 
-        private bool IsRegularWzFile = false; // or data.wz
+        private readonly bool IsRegularWzFile = false; // or data.wz
 
         public string path;
-        private MainPanel panel;
+        private readonly MainPanel panel;
 
+
+        private bool bIsLoading = false;
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="panel"></param>
+        /// <param name="wzNode"></param>
         public SaveForm(MainPanel panel, WzNode wzNode)
         {
             InitializeComponent();
@@ -50,15 +60,78 @@ namespace HaRepacker.GUI
             this.panel = panel;
         }
 
-        public void PrepareAllImgs(WzDirectory dir)
+        /// <summary>
+        /// On loading
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void SaveForm_Load(object sender, EventArgs e)
         {
-            foreach (WzImage img in dir.WzImages)
-                img.Changed = true;
-            foreach (WzDirectory subdir in dir.WzDirectories)
-                PrepareAllImgs(subdir);
+            bIsLoading = true;
+
+            try
+            {
+                if (this.IsRegularWzFile)
+                {
+                    encryptionBox.SelectedIndex = MainForm.GetIndexByWzMapleVersion(wzf.MapleVersion);
+                    versionBox.Value = wzf.Version;
+                }
+                else
+                { // Data.wz uses BMS encryption... no sepcific version indicated
+                    encryptionBox.SelectedIndex = MainForm.GetIndexByWzMapleVersion(WzMapleVersion.BMS);
+                }
+            } finally
+            {
+                bIsLoading = false;
+            }
         }
 
-        private void saveButton_Click(object sender, EventArgs e)
+        /// <summary>
+        /// Process command key on the form
+        /// </summary>
+        /// <param name="msg"></param>
+        /// <param name="keyData"></param>
+        /// <returns></returns>
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            // ...
+            if (keyData == (Keys.Escape))
+            {
+                Close(); // exit window
+                return true;
+            }
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
+
+
+        /// <summary>
+        /// On encryption box selection changed
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void encryptionBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (bIsLoading)
+                return;
+
+            int selectedIndex = encryptionBox.SelectedIndex;
+            WzMapleVersion wzMapleVersion = MainForm.GetWzMapleVersionByWzEncryptionBoxSelection(selectedIndex);
+            if (wzMapleVersion == WzMapleVersion.CUSTOM)
+            {
+                CustomWZEncryptionInputBox customWzInputBox = new CustomWZEncryptionInputBox();
+                customWzInputBox.ShowDialog();
+            } else
+            {
+                MapleCryptoConstants.UserKey_WzLib = MapleCryptoConstants.MAPLESTORY_USERKEY_DEFAULT.ToArray();
+            }
+        }
+
+        /// <summary>
+        /// On save button clicked
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void SaveButton_Click(object sender, EventArgs e)
         {
             if (versionBox.Value < 0)
             {
@@ -77,30 +150,35 @@ namespace HaRepacker.GUI
                 if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK)
                     return;
 
-                WzMapleVersion wzMapleVersionSelected = (WzMapleVersion)encryptionBox.SelectedIndex;
+                WzMapleVersion wzMapleVersionSelected = MainForm.GetWzMapleVersionByWzEncryptionBoxSelection(encryptionBox.SelectedIndex); // new encryption selected
                 if (this.IsRegularWzFile)
                 {
-                    if (wzf is WzFile && wzf.MapleVersion != wzMapleVersionSelected)
-                        PrepareAllImgs(((WzFile)wzf).WzDirectory);
+                    if (wzf is WzFile file && wzf.MapleVersion != wzMapleVersionSelected)
+                        PrepareAllImgs(file.WzDirectory);
 
-                    wzf.MapleVersion = (WzMapleVersion)encryptionBox.SelectedIndex;
-                    if (wzf is WzFile)
-                        ((WzFile)wzf).Version = (short)versionBox.Value;
+                    wzf.MapleVersion = wzMapleVersionSelected;
+                    if (wzf is WzFile file1)
+                    {
+                        file1.Version = (short)versionBox.Value;
+                    }
+
                     if (wzf.FilePath != null && wzf.FilePath.ToLower() == dialog.FileName.ToLower())
                     {
-                        wzf.SaveToDisk(dialog.FileName + "$tmp");
-                        wzNode.Delete();
+                        wzf.SaveToDisk(dialog.FileName + "$tmp", wzMapleVersionSelected);
+                        wzNode.DeleteWzNode();
                         File.Delete(dialog.FileName);
                         File.Move(dialog.FileName + "$tmp", dialog.FileName);
                     }
                     else
                     {
-                        wzf.SaveToDisk(dialog.FileName);
-                        wzNode.Delete();
+                        wzf.SaveToDisk(dialog.FileName, wzMapleVersionSelected);
+                        wzNode.DeleteWzNode();
                     }
 
                     // Reload the new file
-                    Program.WzMan.LoadWzFile(dialog.FileName, (WzMapleVersion)encryptionBox.SelectedIndex, panel);
+                    WzFile loadedWzFile = Program.WzFileManager.LoadWzFile(dialog.FileName, wzMapleVersionSelected);
+                    if (loadedWzFile != null)
+                        Program.WzFileManager.AddLoadedWzFileToMainPanel(loadedWzFile, panel);
                 }
                 else
                 {
@@ -129,7 +207,7 @@ namespace HaRepacker.GUI
                         {
                             Debug.WriteLine(exp); // nvm, dont show to user
                         }
-                        wzNode.Delete();
+                        wzNode.DeleteWzNode();
                     }
                     catch (UnauthorizedAccessException)
                     {
@@ -137,7 +215,7 @@ namespace HaRepacker.GUI
                     }
 
                     // Reload the new file
-                    WzImage img = Program.WzMan.LoadDataWzHotfixFile(dialog.FileName, wzMapleVersionSelected, panel);
+                    WzImage img = Program.WzFileManager.LoadDataWzHotfixFile(dialog.FileName, wzMapleVersionSelected, panel);
                     if (img == null || error_noAdminPriviledge)
                     {
                         MessageBox.Show(HaRepacker.Properties.Resources.MainFileOpenFail, HaRepacker.Properties.Resources.Error);
@@ -147,16 +225,16 @@ namespace HaRepacker.GUI
             Close();
         }
 
-        private void SaveForm_Load(object sender, EventArgs e)
+
+        private void PrepareAllImgs(WzDirectory dir)
         {
-            if (this.IsRegularWzFile)
+            foreach (WzImage img in dir.WzImages)
             {
-                encryptionBox.SelectedIndex = (int)wzf.MapleVersion;
-                versionBox.Value = wzf.Version;
+                img.Changed = true;
             }
-            else
-            { // Data.wz uses BMS encryption... no sepcific version indicated
-                encryptionBox.SelectedIndex = 2;
+            foreach (WzDirectory subdir in dir.WzDirectories)
+            {
+                PrepareAllImgs(subdir);
             }
         }
     }

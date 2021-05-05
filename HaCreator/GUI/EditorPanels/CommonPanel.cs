@@ -4,8 +4,8 @@
 * License, v. 2.0. If a copy of the MPL was not distributed with this
 * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+using HaCreator.CustomControls;
 using HaCreator.MapEditor;
-using HaCreator.ThirdParty;
 using HaCreator.Wz;
 using MapleLib.WzLib.WzStructure.Data;
 using System;
@@ -21,16 +21,20 @@ using WeifenLuo.WinFormsUI.Docking;
 
 namespace HaCreator.GUI.EditorPanels
 {
-    public partial class CommonPanel : DockContent
+    public partial class CommonPanel : UserControl
     {
-        HaCreatorStateManager hcsm;
+        private HaCreatorStateManager hcsm;
 
-        public CommonPanel(HaCreatorStateManager hcsm)
+        public CommonPanel()
+        {
+            InitializeComponent();
+        }
+
+        public void Initialize(HaCreatorStateManager hcsm)
         {
             this.hcsm = hcsm;
-            InitializeComponent();
 
-            ImageViewer[] commonItems = new ImageViewer[] { 
+            ImageViewer[] commonItems = new ImageViewer[] {
                 miscItemsContainer.Add(CreateColoredBitmap(WzInfoTools.XNAToDrawingColor(UserSettings.FootholdColor)), "Foothold", true),
                 miscItemsContainer.Add(CreateColoredBitmap(WzInfoTools.XNAToDrawingColor(UserSettings.RopeColor)), "Rope", true),
                 miscItemsContainer.Add(CreateColoredBitmap(WzInfoTools.XNAToDrawingColor(UserSettings.ChairColor)), "Chair", true),

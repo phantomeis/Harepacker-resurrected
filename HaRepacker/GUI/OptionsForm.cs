@@ -8,7 +8,6 @@ using System;
 using System.Windows.Forms;
 using MapleLib.WzLib.Serialization;
 using HaRepacker.GUI.Panels;
-using HaRepacker.Configuration;
 
 namespace HaRepacker.GUI
 {
@@ -20,7 +19,9 @@ namespace HaRepacker.GUI
         {
             this.panel = panel;
             InitializeComponent();
+
             sortBox.Checked = Program.ConfigurationManager.UserSettings.Sort;
+            loadRelated.Checked = Program.ConfigurationManager.UserSettings.AutoloadRelatedWzFiles;
             apngIncompEnable.Checked = Program.ConfigurationManager.UserSettings.UseApngIncompatibilityFrame;
             autoAssociateBox.Checked = Program.ConfigurationManager.UserSettings.AutoAssociate;
             if (Program.ConfigurationManager.UserSettings.DefaultXmlFolder != "") 
@@ -30,10 +31,27 @@ namespace HaRepacker.GUI
             }
             indentBox.Value = Program.ConfigurationManager.UserSettings.Indentation;
             lineBreakBox.SelectedIndex = (int)Program.ConfigurationManager.UserSettings.LineBreakType;
-            autoUpdate.Checked = Program.ConfigurationManager.UserSettings.AutoUpdate;
 
             // Theme color
             themeColor__comboBox.SelectedIndex = Program.ConfigurationManager.UserSettings.ThemeColor;
+        }
+
+
+        /// <summary>
+        /// Process command key on the form
+        /// </summary>
+        /// <param name="msg"></param>
+        /// <param name="keyData"></param>
+        /// <returns></returns>
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            // ...
+            if (keyData == (Keys.Escape))
+            {
+                Close(); // exit window
+                return true;
+            }
+            return base.ProcessCmdKey(ref msg, keyData);
         }
 
         private void cancelButton_Click(object sender, EventArgs e)
@@ -48,8 +66,9 @@ namespace HaRepacker.GUI
                 Warning.Error(HaRepacker.Properties.Resources.OptionsIndentError);
                 return;
             }
-
+            
             Program.ConfigurationManager.UserSettings.Sort = sortBox.Checked;
+            Program.ConfigurationManager.UserSettings.AutoloadRelatedWzFiles = loadRelated.Checked;
             Program.ConfigurationManager.UserSettings.UseApngIncompatibilityFrame = apngIncompEnable.Checked;
             Program.ConfigurationManager.UserSettings.AutoAssociate = autoAssociateBox.Checked;
             if (defXmlFolderEnable.Checked)
@@ -58,7 +77,6 @@ namespace HaRepacker.GUI
                 Program.ConfigurationManager.UserSettings.DefaultXmlFolder = "";
             Program.ConfigurationManager.UserSettings.Indentation = indentBox.Value;
             Program.ConfigurationManager.UserSettings.LineBreakType = (LineBreak)lineBreakBox.SelectedIndex;
-            Program.ConfigurationManager.UserSettings.AutoUpdate = autoUpdate.Checked;
             Program.ConfigurationManager.UserSettings.ThemeColor = themeColor__comboBox.SelectedIndex;
 
             Program.ConfigurationManager.Save();

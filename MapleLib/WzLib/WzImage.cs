@@ -19,6 +19,8 @@ using System.IO;
 using System;
 using MapleLib.WzLib.Util;
 using MapleLib.WzLib.WzProperties;
+using System.Diagnostics;
+using MapleLib.PacketLib;
 
 namespace MapleLib.WzLib
 {
@@ -34,7 +36,8 @@ namespace MapleLib.WzLib
         #region Fields
         internal bool parsed = false;
         internal string name;
-        internal int size, checksum;
+        internal int size;
+        private int checksum;
         internal uint offset = 0;
         internal WzBinaryReader reader;
         internal List<WzImageProperty> properties = new List<WzImageProperty>();
@@ -42,8 +45,16 @@ namespace MapleLib.WzLib
         internal int blockStart = 0;
         internal long tempFileStart = 0;
         internal long tempFileEnd = 0;
-        internal bool changed = false;
-        internal bool parseEverything = false;
+        internal bool bIsImageChanged = false;
+        private bool parseEverything = false;
+
+        /// <summary>
+        /// Wz image embedding .lua file.
+        /// </summary>
+        public bool IsLuaWzImage
+        {
+            get { return Name.EndsWith(".lua"); } // TODO: find some ways to avoid user from adding a new image with .lua name
+        }
         #endregion
 
         #region Constructors\Destructors
@@ -69,6 +80,14 @@ namespace MapleLib.WzLib
             this.name = name;
             this.reader = reader;
             this.blockStart = (int)reader.BaseStream.Position;
+            this.checksum = 0;
+        }
+        internal WzImage(string name, WzBinaryReader reader, int checksum)
+        {
+            this.name = name;
+            this.reader = reader;
+            this.blockStart = (int)reader.BaseStream.Position;
+            this.checksum = checksum;
         }
 
         public override void Dispose()
@@ -78,7 +97,9 @@ namespace MapleLib.WzLib
             if (properties != null)
             {
                 foreach (WzImageProperty prop in properties)
+                {
                     prop.Dispose();
+                }
                 properties.Clear();
                 properties = null;
             }
@@ -96,14 +117,21 @@ namespace MapleLib.WzLib
         /// </summary>
         public override string Name { get { return name; } set { name = value; } }
         public override WzFile WzFileParent { get { return Parent != null ? Parent.WzFileParent : null; } }
+
         /// <summary>
         /// Is the object parsed
         /// </summary>
         public bool Parsed { get { return parsed; } set { parsed = value; } }
+
+        /// <summary>
+        /// Set the property if the image should be fully parsed
+        /// </summary>
+        public bool ParseEverything { get { return parseEverything; } set { this.parseEverything = value; } } 
+
         /// <summary>
         /// Was the image changed
         /// </summary>
-        public bool Changed { get { return changed; } set { changed = value; } }
+        public bool Changed { get { return bIsImageChanged; } set { bIsImageChanged = value; } }
         /// <summary>
         /// The size in the wz file of the image
         /// </summary>
@@ -111,7 +139,10 @@ namespace MapleLib.WzLib
         /// <summary>
         /// The checksum of the image
         /// </summary>
-        public int Checksum { get { return checksum; } set { checksum = value; } }
+        public int Checksum { 
+            get { return this.checksum; }
+            private set {  } 
+        }
         /// <summary>
         /// The offset of the image
         /// </summary>
@@ -149,8 +180,10 @@ namespace MapleLib.WzLib
         public WzImage DeepClone()
         {
             if (reader != null && !parsed) ParseImage();
-            WzImage clone = new WzImage(name);
-            clone.changed = true;
+            WzImage clone = new WzImage(name)
+            {
+                bIsImageChanged = true
+            };
             foreach (WzImageProperty prop in properties)
                 clone.AddProperty(prop.DeepClone());
             return clone;
@@ -202,6 +235,7 @@ namespace MapleLib.WzLib
             for (int x = 0; x < segments.Length; x++)
             {
                 bool foundChild = false;
+
                 foreach (WzImageProperty iwp in (ret == null ? this.properties : ret.WzProperties))
                 {
                     if (iwp.Name == segments[x])
@@ -220,7 +254,7 @@ namespace MapleLib.WzLib
         }
 
         /// <summary>
-        /// Adds a property to the image
+        /// Adds a property to the WzImage
         /// </summary>
         /// <param name="prop">Property to add</param>
         public void AddProperty(WzImageProperty prop)
@@ -229,6 +263,10 @@ namespace MapleLib.WzLib
             if (reader != null && !parsed) ParseImage();
             properties.Add(prop);
         }
+        /// <summary>
+        /// Add a list of properties to the WzImage
+        /// </summary>
+        /// <param name="props"></param>
         public void AddProperties(List<WzImageProperty> props)
         {
             foreach (WzImageProperty prop in props)
@@ -263,36 +301,79 @@ namespace MapleLib.WzLib
 
         #region Parsing Methods
         /// <summary>
+        /// Calculates and set the image header checksum
+        /// </summary>
+        /// <param name="memStream"></param>
+        internal void CalculateAndSetImageChecksum(byte[] bytes)
+        {
+            this.checksum = 0;
+            foreach (byte b in bytes)
+            {
+                this.checksum += b;
+            }
+        }
+
+        /// <summary>
 		/// Parses the image from the wz filetod
 		/// </summary>
 		/// <param name="wzReader">The BinaryReader that is currently reading the wz file</param>
         /// <returns>bool Parse status</returns>
-        public bool ParseImage(bool parseEverything = false)
+        public bool ParseImage(bool forceReadFromData = false)
         {
-            if (Parsed)
-            {
-                return true;
-            }
-            else if (Changed)
-            {
-                Parsed = true;
-                return true;
+            if (!forceReadFromData) { // only check if parsed or changed if its not false read
+                if (Parsed)
+                {
+                    return true;
+                }
+                else if (Changed)
+                {
+                    Parsed = true;
+                    return true;
+                }
             }
 
             lock (reader) // for multi threaded XMLWZ export. 
             {
-                this.parseEverything = parseEverything;
                 long originalPos = reader.BaseStream.Position;
                 reader.BaseStream.Position = offset;
 
                 byte b = reader.ReadByte();
-                string prop = reader.ReadString();
-                ushort val = reader.ReadUInt16();
-
-                if (b != WzImageHeaderByte || prop != "Property" || val != 0)
-                    return false;
-
-                properties.AddRange(WzImageProperty.ParsePropertyList(offset, reader, this, this));
+                switch (b)
+                {
+                    case 0x1: // .lua   
+                        {
+                            if (IsLuaWzImage) 
+                            {
+                                WzLuaProperty lua = WzImageProperty.ParseLuaProperty(offset, reader, this, this);
+                                List<WzImageProperty> luaImage = new List<WzImageProperty>
+                                {
+                                    lua
+                                };
+                                properties.AddRange(luaImage);
+                                parsed = true; // test
+                                return true;
+                            }
+                            return false; // unhandled for now, if it isnt an .lua image
+                        }
+                    case WzImageHeaderByte:
+                        {
+                            string prop = reader.ReadString();
+                            ushort val = reader.ReadUInt16();
+                            if (prop != "Property" || val != 0)
+                            {
+                                return false;
+                            }
+                            break;
+                        }
+                    default:
+                        {
+                            // todo: log this or warn.
+                            Helpers.ErrorLogger.Log(Helpers.ErrorLevel.MissingFeature, "[WzImage] New Wz image header found. b = " + b);
+                            return false;
+                        }
+                }
+                List<WzImageProperty> images = WzImageProperty.ParsePropertyList(offset, reader, this, this);
+                properties.AddRange(images);
 
                 parsed = true;
             }
@@ -325,6 +406,7 @@ namespace MapleLib.WzLib
         public void UnparseImage()
         {
             parsed = false;
+            this.properties.Clear();
             this.properties = new List<WzImageProperty>();
         }
 
@@ -332,18 +414,28 @@ namespace MapleLib.WzLib
         /// Writes the WzImage object to the underlying WzBinaryWriter
         /// </summary>
         /// <param name="writer"></param>
+        /// <param name="bIsWzUserKeyDefault">Uses the default MapleStory UserKey or a custom key.</param>
         /// <param name="forceReadFromData">Read from data regardless of base data that's changed or not.</param>
-		public void SaveImage(WzBinaryWriter writer, bool forceReadFromData = false)
+		public void SaveImage(WzBinaryWriter writer, bool bIsWzUserKeyDefault = true, bool forceReadFromData = false)
         {
-            if (changed || forceReadFromData)
+            if (bIsImageChanged ||
+                !bIsWzUserKeyDefault || //  everything needs to be re-written when a custom UserKey is used
+                forceReadFromData) // if its not being force-read and written, it saves with the previous WZ encryption IV.
             {
                 if (reader != null && !parsed)
-                    ParseImage();
+                {
+                    this.ParseEverything = true;
+                    ParseImage(forceReadFromData);
+                }
+
                 WzSubProperty imgProp = new WzSubProperty();
+
                 long startPos = writer.BaseStream.Position;
                 imgProp.AddPropertiesForWzImageDumping(WzProperties);
                 imgProp.WriteValue(writer);
+
                 writer.StringCache.Clear();
+
                 size = (int)(writer.BaseStream.Position - startPos);
             }
             else
@@ -367,6 +459,16 @@ namespace MapleLib.WzLib
             {
                 throw new Exception("Under Construction");
             }
+        }
+        #endregion
+
+        #region Overrides
+        public override string ToString()
+        {
+            string loggerSuffix = string.Format("WzImage: '{0}' {1}", Name,
+                ((WzFileParent != null) ? (", ver. " + Enum.GetName(typeof(WzMapleVersion), WzFileParent.MapleVersion) + ", v" + WzFileParent.Version.ToString()) : ""));
+
+            return loggerSuffix;
         }
         #endregion
     }

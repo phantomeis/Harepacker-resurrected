@@ -139,7 +139,7 @@
     <value>GMS (늙은)</value>
   </data>
   <data name="EncTypeMSEA" xml:space="preserve">
-    <value>MSEA/Taiwan (늙은)</value>
+    <value>MSEA/ EMS/ Taiwan (늙은)</value>
   </data>
   <data name="EncTypeNone" xml:space="preserve">
     <value>BMS / GMS / MapleSEA / メイプルストーリー / 메이플스토리</value>
@@ -231,9 +231,6 @@
   <data name="MainAddVec" xml:space="preserve">
     <value>Add vector</value>
   </data>
-  <data name="MainAnimationFail" xml:space="preserve">
-    <value>This item is not an animation.</value>
-  </data>
   <data name="MainCannotInsertToNode" xml:space="preserve">
     <value>Cannot insert selected object into this type of wz node.</value>
   </data>
@@ -315,9 +312,6 @@
   <data name="OptionsIndentError" xml:space="preserve">
     <value>Indent must be above 0</value>
   </data>
-  <data name="ProgramLoadSettingsError" xml:space="preserve">
-    <value>Could not load settings file, make sure it is not in use. If it is not, delete it and try again.</value>
-  </data>
   <data name="ReplaceConfirm" xml:space="preserve">
     <value>The node "{0}" already exists. Do you want it to be replaced?</value>
   </data>
@@ -368,5 +362,41 @@
   </data>
   <data name="XmlFilter" xml:space="preserve">
     <value>eXtended Markup Language (*.xml)</value>
+  </data>
+  <data name="Subpanel_Loading" xml:space="preserve">
+    <value>로딩</value>
+  </data>
+  <data name="ExecutingAssemblyError" xml:space="preserve">
+    <value>This is only available under the x86 version of HaRepacker, please get the alternative version.</value>
+  </data>
+  <data name="EncTypeCustom" xml:space="preserve">
+    <value>Use custom encryption key</value>
+  </data>
+  <data name="EncTypeGenerate" xml:space="preserve">
+    <value>Bruteforce AES key (Generate)</value>
+  </data>
+  <data name="RelativeTime_DaysAgo" xml:space="preserve">
+    <value>{0} day(s) ago</value>
+  </data>
+  <data name="RelativeTime_HoursAgo" xml:space="preserve">
+    <value>{0} hour(s) ago</value>
+  </data>
+  <data name="RelativeTime_MinutesAgo" xml:space="preserve">
+    <value>{0} minute(s) ago</value>
+  </data>
+  <data name="RelativeTime_MonthsAgo" xml:space="preserve">
+    <value>{0} month(s) ago</value>
+  </data>
+  <data name="RelativeTime_SecondsAgo" xml:space="preserve">
+    <value>{0} second(s) ago</value>
+  </data>
+  <data name="RelativeTime_YearsAgo" xml:space="preserve">
+    <value>{0} years(s) ago</value>
+  </data>
+  <data name="MainWzExportJson_IncludeBase64" xml:space="preserve">
+    <value>Would you like to include the base64 data of image, mp3 &amp; other binary data in the json?</value>
+  </data>
+  <data name="MainWzExportJson_IncludeBase64_Title" xml:space="preserve">
+    <value>Data</value>
   </data>
 </root>

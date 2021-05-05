@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>HaRepacker</RootNamespace>
     <AssemblyName>HaRepackerResurrected</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>
@@ -37,7 +37,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>$(SolutionDir)$(Configuration)\$(Platform)\</OutputPath>
+    <OutputPath>..\Compiled\Debug\x86\</OutputPath>
     <DefineConstants>TRACE;DEBUG</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -49,7 +49,7 @@
     <PlatformTarget>x86</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>$(SolutionDir)$(Configuration)\$(Platform)\</OutputPath>
+    <OutputPath>..\Compiled\Release\x86\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -57,18 +57,18 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>
-    </ApplicationIcon>
+    <ApplicationIcon>HaLogo.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject>HaRepacker.Program</StartupObject>
   </PropertyGroup>
   <PropertyGroup>
-    <Win32Resource>HaRepacker.res</Win32Resource>
+    <Win32Resource>
+    </Win32Resource>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>$(SolutionDir)$(Configuration)\$(Platform)\</OutputPath>
+    <OutputPath>..\Compiled\Debug\x64\</OutputPath>
     <DefineConstants>TRACE;DEBUG</DefineConstants>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DebugType>full</DebugType>
@@ -82,10 +82,10 @@
     <CodeAnalysisRuleDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
     <CodeAnalysisIgnoreBuiltInRules>false</CodeAnalysisIgnoreBuiltInRules>
     <Prefer32Bit>false</Prefer32Bit>
-    <Optimize>true</Optimize>
+    <Optimize>false</Optimize>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <OutputPath>$(SolutionDir)$(Configuration)\$(Platform)\</OutputPath>
+    <OutputPath>..\Compiled\Release\x64\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Optimize>true</Optimize>
@@ -103,7 +103,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>$(SolutionDir)$(Configuration)\$(Platform)\</OutputPath>
+    <OutputPath>..\Compiled\Debug\AnyCPU\</OutputPath>
     <DefineConstants>TRACE;DEBUG</DefineConstants>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DebugType>full</DebugType>
@@ -113,7 +113,7 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
-    <OutputPath>$(SolutionDir)$(Configuration)\$(Platform)\</OutputPath>
+    <OutputPath>..\Compiled\Release\AnyCPU\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Optimize>true</Optimize>
@@ -123,18 +123,80 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
+  <PropertyGroup>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+  </PropertyGroup>
+  <PropertyGroup />
+  <PropertyGroup>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
   <ItemGroup>
-    <Reference Include="NAudio, Version=1.8.4.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\NAudio.1.8.4\lib\net35\NAudio.dll</HintPath>
+    <Reference Include="ICSharpCode.AvalonEdit, Version=6.0.1.278, Culture=neutral, PublicKeyToken=9cc39be672370310, processorArchitecture=MSIL">
+      <HintPath>..\packages\AvalonEdit.6.0.1\lib\net45\ICSharpCode.AvalonEdit.dll</HintPath>
     </Reference>
-    <Reference Include="Newtonsoft.Json, Version=11.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.11.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Microsoft.Bcl.AsyncInterfaces, Version=5.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Bcl.AsyncInterfaces.5.0.0\lib\net461\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="MonoGame.Framework, Version=3.8.0.1641, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MonoGame.Framework.WindowsDX.3.8.0.1641\lib\net452\MonoGame.Framework.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
+    <Reference Include="SharpDX, Version=4.2.0.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpDX.4.2.0\lib\net45\SharpDX.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpDX.Direct2D1, Version=4.2.0.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpDX.Direct2D1.4.2.0\lib\net45\SharpDX.Direct2D1.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpDX.Direct3D11, Version=4.2.0.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpDX.Direct3D11.4.2.0\lib\net45\SharpDX.Direct3D11.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpDX.Direct3D9, Version=4.2.0.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpDX.Direct3D9.4.2.0\lib\net45\SharpDX.Direct3D9.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpDX.DXGI, Version=4.2.0.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpDX.DXGI.4.2.0\lib\net45\SharpDX.DXGI.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpDX.Mathematics, Version=4.2.0.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpDX.Mathematics.4.2.0\lib\net45\SharpDX.Mathematics.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpDX.MediaFoundation, Version=4.2.0.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpDX.MediaFoundation.4.2.0\lib\net45\SharpDX.MediaFoundation.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpDX.XAudio2, Version=4.2.0.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpDX.XAudio2.4.2.0\lib\net45\SharpDX.XAudio2.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpDX.XInput, Version=4.2.0.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpDX.XInput.4.2.0\lib\net45\SharpDX.XInput.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
+    <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Drawing.Primitives, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Drawing.Primitives.4.3.0\lib\net45\System.Drawing.Primitives.dll</HintPath>
+      <Private>True</Private>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Runtime, Version=4.1.1.1, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Runtime.4.3.1\lib\net462\System.Runtime.dll</HintPath>
+      <Private>True</Private>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=5.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.5.0.0\lib\net45\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.InteropServices.RuntimeInformation, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Runtime.InteropServices.RuntimeInformation.4.3.0\lib\net45\System.Runtime.InteropServices.RuntimeInformation.dll</HintPath>
+      <Private>True</Private>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Threading.Tasks.Extensions, Version=4.2.0.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Threading.Tasks.Extensions.4.5.4\lib\net461\System.Threading.Tasks.Extensions.dll</HintPath>
+    </Reference>
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xaml" />
     <Reference Include="System.Xml" />
@@ -143,14 +205,24 @@
     </Reference>
     <Reference Include="WindowsBase" />
     <Reference Include="WindowsFormsIntegration" />
+    <Reference Include="WpfAnimatedGif, Version=2.0.0.0, Culture=neutral, PublicKeyToken=9e7cd3b544a090dc, processorArchitecture=MSIL">
+      <HintPath>..\packages\WpfAnimatedGif.2.0.0\lib\net40\WpfAnimatedGif.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AnimationBuilder.cs" />
-    <Compile Include="Comparer\TreeViewNodeSorter.cs" />
     <Compile Include="Comparer\SemiNumericComparer.cs" />
-    <Compile Include="Configuration\ConfigurationManager.cs" />
-    <Compile Include="ContextMenuManager.cs" />
-    <Compile Include="Converter\BitmapToImageSource.cs" />
+    <Compile Include="Comparer\TreeViewNodeSorter.cs" />
+    <Compile Include="Converter\CheckboxToBorderTransparencyConverter.cs" />
+    <Compile Include="GUI\ContextMenuManager.cs" />
+    <Compile Include="Converter\CheckboxToVisibilityConverter.cs" />
+    <Compile Include="Converter\ImageSizeDoubleToIntegerConverter.cs" />
+    <Compile Include="Converter\ImageWidthOrHeightToScreenDPIConverter.cs" />
+    <Compile Include="Converter\IntegerULongCommasConverter.cs" />
+    <Compile Include="Converter\PointFOriginToStringConverter.cs" />
+    <Compile Include="Converter\PointFToVisiblityConverter.cs" />
+    <Compile Include="Converter\TicksToRelativeTimeConverter.cs" />
+    <Compile Include="Converter\VectorOriginPointFToMarginConverter.cs" />
     <Compile Include="FHMapper\FHMapper.cs" />
     <Compile Include="GUI\AboutForm.cs">
       <SubType>Form</SubType>
@@ -305,34 +377,54 @@
     <Compile Include="GUI\OptionsForm.Designer.cs">
       <DependentUpon>OptionsForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="GUI\Panels\ImageAnimationPreviewWindow.cs" />
     <Compile Include="GUI\Panels\MainPanel.xaml.cs">
       <DependentUpon>MainPanel.xaml</DependentUpon>
     </Compile>
-    <Compile Include="GUI\Panels\SubPanels\ChangeableTextBox.xaml.cs">
-      <DependentUpon>ChangeableTextBox.xaml</DependentUpon>
+    <Compile Include="GUI\Panels\SubPanels\AvalonTextEditor.xaml.cs">
+      <DependentUpon>AvalonTextEditor.xaml</DependentUpon>
     </Compile>
-    <Compile Include="GUI\Panels\SubPanels\FieldLimitPanel.cs">
-      <SubType>UserControl</SubType>
+    <Compile Include="GUI\Panels\SubPanels\ImageRenderViewer.xaml.cs">
+      <DependentUpon>ImageRenderViewer.xaml</DependentUpon>
     </Compile>
-    <Compile Include="GUI\Panels\SubPanels\FieldLimitPanel.designer.cs">
-      <DependentUpon>FieldLimitPanel.cs</DependentUpon>
-    </Compile>
-    <Compile Include="GUI\Panels\SubPanels\SoundPlayer.xaml.cs">
-      <DependentUpon>SoundPlayer.xaml</DependentUpon>
+    <Compile Include="GUI\Panels\SubPanels\LoadingPanel.xaml.cs">
+      <DependentUpon>LoadingPanel.xaml</DependentUpon>
     </Compile>
     <Compile Include="GUI\Panels\SubPanels\XYPanel.xaml.cs">
       <DependentUpon>XYPanel.xaml</DependentUpon>
     </Compile>
+    <Compile Include="GUI\CustomWZEncryptionInputBox.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="GUI\CustomWZEncryptionInputBox.designer.cs">
+      <DependentUpon>CustomWZEncryptionInputBox.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Properties\Resources.ja.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.ja.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Properties\Resources.ko.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.ko.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Properties\Resources.zh-CHS.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.zh-CHS.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Properties\Resources.zh-CHT.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.zh-CHT.resx</DependentUpon>
+    </Compile>
     <Compile Include="SavedFolderBrowser.cs" />
-    <Compile Include="Configuration\ApplicationSettings.cs" />
-    <Compile Include="Configuration\UserSettings.cs" />
-    <Compile Include="SharpApng.cs" />
     <Compile Include="TreeViewMS.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="UndoRedoManager.cs" />
     <Compile Include="Warning.cs" />
-    <Compile Include="WzFileManager.cs" />
     <Compile Include="GUI\WzStringSearchForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -354,7 +446,7 @@
     <Compile Include="GUI\SaveForm.designer.cs">
       <DependentUpon>SaveForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="WzMp3Streamer.cs" />
+    <Compile Include="WzFileManager.cs" />
     <Compile Include="WzNode.cs" />
     <EmbeddedResource Include="FHMapper\DisplayMap.zh-CHS.resx">
       <DependentUpon>DisplayMap.cs</DependentUpon>
@@ -582,14 +674,15 @@
     <EmbeddedResource Include="GUI\OptionsForm.zh-CHT.resx">
       <DependentUpon>OptionsForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="GUI\Panels\SubPanels\FieldLimitPanel.resx">
-      <DependentUpon>FieldLimitPanel.cs</DependentUpon>
+    <EmbeddedResource Include="GUI\CustomWZEncryptionInputBox.resx">
+      <DependentUpon>CustomWZEncryptionInputBox.cs</DependentUpon>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
-    <EmbeddedResource Include="GUI\Panels\SubPanels\FieldLimitPanel.zh-CHS.resx">
-      <DependentUpon>FieldLimitPanel.cs</DependentUpon>
+    <EmbeddedResource Include="GUI\CustomWZEncryptionInputBox.zh-CHS.resx">
+      <DependentUpon>CustomWZEncryptionInputBox.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="GUI\Panels\SubPanels\FieldLimitPanel.zh-CHT.resx">
-      <DependentUpon>FieldLimitPanel.cs</DependentUpon>
+    <EmbeddedResource Include="GUI\CustomWZEncryptionInputBox.zh-CHT.resx">
+      <DependentUpon>CustomWZEncryptionInputBox.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="GUI\SaveForm.zh-CHS.resx">
       <DependentUpon>SaveForm.cs</DependentUpon>
@@ -603,10 +696,16 @@
     <EmbeddedResource Include="GUI\ZLZPacketEncryptionKeyForm.resx">
       <DependentUpon>ZLZPacketEncryptionKeyForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Properties\Resources.ja.resx" />
-    <EmbeddedResource Include="Properties\Resources.ko.resx" />
+    <EmbeddedResource Include="Properties\Resources.ja.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.ja.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.ko.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.ko.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
       <SubType>Designer</SubType>
     </EmbeddedResource>
@@ -619,14 +718,22 @@
       <DependentUpon>SaveForm.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
-    <EmbeddedResource Include="Properties\Resources.zh-CHS.resx" />
-    <EmbeddedResource Include="Properties\Resources.zh-CHT.resx" />
+    <EmbeddedResource Include="Properties\Resources.zh-CHS.resx">
+      <SubType>Designer</SubType>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.zh-CHS.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.zh-CHT.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.zh-CHT.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
     <EmbeddedResource Include="TreeViewMS.resx">
       <DependentUpon>TreeViewMS.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <None Include="app.manifest" />
     <None Include="HaRepacker.res" />
     <None Include="packages.config" />
     <None Include="Resources\page_white.png" />
@@ -648,14 +755,18 @@
     <None Include="Resources\find.png" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\HaSharedLibrary\HaSharedLibrary.csproj">
+      <Project>{5411388b-f3cb-4d52-9f55-abd15cfe966c}</Project>
+      <Name>HaSharedLibrary</Name>
+    </ProjectReference>
     <ProjectReference Include="..\MapleLib\MapleLib.csproj">
       <Project>{28AAB36D-942E-4476-A000-0E9DE380F390}</Project>
       <Name>MapleLib</Name>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="..\Win32\Win32.csproj">
-      <Project>{638ca88a-8dee-4af4-9b43-7abdfdb074f7}</Project>
-      <Name>Win32</Name>
+    <ProjectReference Include="..\spine-runtimes-2.1.25\spine-csharp\spine-csharp 2.1.25.csproj">
+      <Project>{94144e22-2431-4a8f-ac04-dec22f7edd8f}</Project>
+      <Name>spine-csharp 2.1.25</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
@@ -676,18 +787,26 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Resources\sort.png" />
     <None Include="Resources\Pause_.png" />
     <None Include="Resources\Play.png" />
     <None Include="Resources\207px-Circle-undo.svg.png" />
     <None Include="Resources\8800000_attack_10.png" />
+    <Content Include="HaLogo.ico" />
     <Content Include="Resources\arrow_left.png" />
     <None Include="Resources\red_x1.png" />
     <None Include="Resources\rename.png" />
     <None Include="Resources\arrow_refresh.png" />
     <Content Include="Resources\arrow_right.png" />
     <None Include="Resources\img_default.png" />
+    <Resource Include="Resources\loading.gif" />
+    <None Include="Resources\expand.png" />
+    <None Include="Resources\collapse.png" />
+    <None Include="Resources\ladyboss_test_attack2_0.png" />
+    <None Include="Resources\copyFile.png" />
     <Content Include="Resources\OrangeMushroom\orangeMushroom_Jump.gif" />
     <Content Include="Resources\OrangeMushroom\orangeMushroom_Stand.gif" />
+    <None Include="Resources\pasteFile.png" />
     <Content Include="Resources\Pause.png" />
   </ItemGroup>
   <ItemGroup>
@@ -695,11 +814,15 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="GUI\Panels\SubPanels\ChangeableTextBox.xaml">
+    <Page Include="GUI\Panels\SubPanels\AvalonTextEditor.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="GUI\Panels\SubPanels\SoundPlayer.xaml">
+    <Page Include="GUI\Panels\SubPanels\ImageRenderViewer.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="GUI\Panels\SubPanels\LoadingPanel.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -708,7 +831,15 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="..\packages\MonoGame.Framework.WindowsDX.3.8.0.1641\build\MonoGame.Framework.WindowsDX.targets" Condition="Exists('..\packages\MonoGame.Framework.WindowsDX.3.8.0.1641\build\MonoGame.Framework.WindowsDX.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\MonoGame.Framework.WindowsDX.3.8.0.1641\build\MonoGame.Framework.WindowsDX.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\MonoGame.Framework.WindowsDX.3.8.0.1641\build\MonoGame.Framework.WindowsDX.targets'))" />
+  </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

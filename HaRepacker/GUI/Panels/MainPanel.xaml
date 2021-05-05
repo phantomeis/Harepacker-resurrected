@@ -4,6 +4,8 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:HaRepacker"
+             
+             xmlns:sharedLib="clr-namespace:HaSharedLibrary.GUI;assembly=HaSharedLibrary"
               xmlns:localgui ="clr-namespace:HaRepacker.GUI"
              xmlns:localSubPanels ="clr-namespace:HaRepacker.GUI.Panels.SubPanels"
              xmlns:wf="clr-namespace:System.Windows.Forms;assembly=System.Windows.Forms"  
@@ -40,11 +42,110 @@
                 <DiscreteObjectKeyFrame KeyTime="0:0:0.3" Value="{x:Static Visibility.Collapsed}"/>
             </ObjectAnimationUsingKeyFrames>
         </Storyboard>
+        <Style x:Key="FocusVisual">
+            <Setter Property="Control.Template">
+                <Setter.Value>
+                    <ControlTemplate>
+                        <Rectangle Margin="2" SnapsToDevicePixels="true" Stroke="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}" StrokeThickness="1" StrokeDashArray="1 2"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <SolidColorBrush x:Key="Button.Static.Background" Color="#FFDDDDDD"/>
+        <SolidColorBrush x:Key="Button.Static.Border" Color="#FF707070"/>
+        <SolidColorBrush x:Key="Button.MouseOver.Background" Color="#FFBEE6FD"/>
+        <SolidColorBrush x:Key="Button.MouseOver.Border" Color="#FF3C7FB1"/>
+        <SolidColorBrush x:Key="Button.Pressed.Background" Color="#FFC4E5F6"/>
+        <SolidColorBrush x:Key="Button.Pressed.Border" Color="#FF2C628B"/>
+        <SolidColorBrush x:Key="Button.Disabled.Background" Color="#FFF4F4F4"/>
+        <SolidColorBrush x:Key="Button.Disabled.Border" Color="#FFADB2B5"/>
+        <SolidColorBrush x:Key="Button.Disabled.Foreground" Color="#FF838383"/>
+
+        <Style x:Key="ButtonStyle_MoreOption" TargetType="{x:Type Button}">
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
+            <Setter Property="Background" Value="{StaticResource Button.Static.Background}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Button.Static.Border}"/>
+            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="0,0,0,0"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="30"/>
+            
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <ContentPresenter x:Name="contentPresenter" Focusable="True" Margin="0" 
+                                          HorizontalAlignment="Center"  VerticalAlignment="Center"
+                                          RecognizesAccessKey="True" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" RenderTransformOrigin="0.5,0.5" >
+                            <ContentPresenter.RenderTransform>
+                                <TransformGroup>
+                                    <ScaleTransform/>
+                                    <SkewTransform/>
+                                    <RotateTransform/>
+                                    <TranslateTransform/>
+                                </TransformGroup>
+                            </ContentPresenter.RenderTransform>
+                            <VisualStateManager.VisualStateGroups>
+                                <VisualStateGroup x:Name="CommonStates">
+                                    <VisualState x:Name="Normal"/>
+                                    <VisualState x:Name="MouseOver">
+                                        <Storyboard>
+                                            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleX)" Storyboard.TargetName="contentPresenter">
+                                                <EasingDoubleKeyFrame KeyTime="0" Value="1.1"/>
+                                            </DoubleAnimationUsingKeyFrames>
+                                            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleY)" Storyboard.TargetName="contentPresenter">
+                                                <EasingDoubleKeyFrame KeyTime="0" Value="1.1"/>
+                                            </DoubleAnimationUsingKeyFrames>
+                                        </Storyboard>
+                                    </VisualState>
+                                    <VisualState x:Name="Pressed">
+                                        <Storyboard>
+                                            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleX)" Storyboard.TargetName="contentPresenter">
+                                                <EasingDoubleKeyFrame KeyTime="0" Value="1.2"/>
+                                            </DoubleAnimationUsingKeyFrames>
+                                            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleY)" Storyboard.TargetName="contentPresenter">
+                                                <EasingDoubleKeyFrame KeyTime="0" Value="1.2"/>
+                                            </DoubleAnimationUsingKeyFrames>
+                                        </Storyboard>
+                                    </VisualState>
+                                    <VisualState x:Name="Disabled"/>
+                                </VisualStateGroup>
+                            </VisualStateManager.VisualStateGroups>
+                        </ContentPresenter>
+                        
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEnabled" Value="false">
+                                <Setter Property="TextElement.Foreground" TargetName="contentPresenter" Value="{StaticResource Button.Disabled.Foreground}"/>
+                            </Trigger>
+
+                            <Trigger Property="IsMouseOver" Value="true">
+
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="true">
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Storyboard x:Key="Storyboard_TreeviewItemSelectedAnimation">
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleX)" Storyboard.TargetName="button_MoreOption">
+                <EasingDoubleKeyFrame KeyTime="0:0:0.2" Value="1.5"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:0.4" Value="1"/>
+            </DoubleAnimationUsingKeyFrames>
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleY)" Storyboard.TargetName="button_MoreOption">
+                <EasingDoubleKeyFrame KeyTime="0:0:0.2" Value="1.5"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:0.4" Value="1"/>
+            </DoubleAnimationUsingKeyFrames>
+        </Storyboard>
     </UserControl.Resources>
     <UserControl.Triggers>
         <EventTrigger RoutedEvent="FrameworkElement.Loaded">
             <BeginStoryboard Storyboard="{StaticResource Storyboard_Find_FadeIn}"/>
             <BeginStoryboard Storyboard="{StaticResource Storyboard_Find_FadeOut}"/>
+            <BeginStoryboard Storyboard="{StaticResource Storyboard_TreeviewItemSelectedAnimation}"/>
         </EventTrigger>
     </UserControl.Triggers>
 
@@ -56,36 +157,6 @@
 
                 <VisualState x:Name="BlackTheme">
                     <Storyboard>
-                        <ColorAnimationUsingKeyFrames Storyboard.TargetProperty="(Panel.Background).(SolidColorBrush.Color)" Storyboard.TargetName="button_animateSelectedCanvas">
-                            <EasingColorKeyFrame KeyTime="0" Value="Black"/>
-                        </ColorAnimationUsingKeyFrames>
-                        <ColorAnimationUsingKeyFrames Storyboard.TargetProperty="(Panel.Background).(SolidColorBrush.Color)" Storyboard.TargetName="changeImageButton">
-                            <EasingColorKeyFrame KeyTime="0" Value="Black"/>
-                        </ColorAnimationUsingKeyFrames>
-                        <ColorAnimationUsingKeyFrames Storyboard.TargetProperty="(Panel.Background).(SolidColorBrush.Color)" Storyboard.TargetName="changeSoundButton">
-                            <EasingColorKeyFrame KeyTime="0" Value="Black"/>
-                        </ColorAnimationUsingKeyFrames>
-                        <ColorAnimationUsingKeyFrames Storyboard.TargetProperty="(Panel.Background).(SolidColorBrush.Color)" Storyboard.TargetName="saveSoundButton">
-                            <EasingColorKeyFrame KeyTime="0" Value="Black"/>
-                        </ColorAnimationUsingKeyFrames>
-                        <ColorAnimationUsingKeyFrames Storyboard.TargetProperty="(Panel.Background).(SolidColorBrush.Color)" Storyboard.TargetName="saveImageButton">
-                            <EasingColorKeyFrame KeyTime="0" Value="Black"/>
-                        </ColorAnimationUsingKeyFrames>
-                        <ColorAnimationUsingKeyFrames Storyboard.TargetProperty="(TextElement.Foreground).(SolidColorBrush.Color)" Storyboard.TargetName="saveImageButton">
-                            <EasingColorKeyFrame KeyTime="0" Value="White"/>
-                        </ColorAnimationUsingKeyFrames>
-                        <ColorAnimationUsingKeyFrames Storyboard.TargetProperty="(TextElement.Foreground).(SolidColorBrush.Color)" Storyboard.TargetName="saveSoundButton">
-                            <EasingColorKeyFrame KeyTime="0" Value="White"/>
-                        </ColorAnimationUsingKeyFrames>
-                        <ColorAnimationUsingKeyFrames Storyboard.TargetProperty="(TextElement.Foreground).(SolidColorBrush.Color)" Storyboard.TargetName="changeSoundButton">
-                            <EasingColorKeyFrame KeyTime="0" Value="White"/>
-                        </ColorAnimationUsingKeyFrames>
-                        <ColorAnimationUsingKeyFrames Storyboard.TargetProperty="(TextElement.Foreground).(SolidColorBrush.Color)" Storyboard.TargetName="changeImageButton">
-                            <EasingColorKeyFrame KeyTime="0" Value="White"/>
-                        </ColorAnimationUsingKeyFrames>
-                        <ColorAnimationUsingKeyFrames Storyboard.TargetProperty="(TextElement.Foreground).(SolidColorBrush.Color)" Storyboard.TargetName="button_animateSelectedCanvas">
-                            <EasingColorKeyFrame KeyTime="0" Value="White"/>
-                        </ColorAnimationUsingKeyFrames>
                         <ColorAnimationUsingKeyFrames Storyboard.TargetProperty="(Panel.Background).(SolidColorBrush.Color)" Storyboard.TargetName="grid_FindPanel">
                             <EasingColorKeyFrame KeyTime="0" Value="Black"/>
                         </ColorAnimationUsingKeyFrames>
@@ -113,9 +184,6 @@
                         <ColorAnimationUsingKeyFrames Storyboard.TargetProperty="(TextElement.Foreground).(SolidColorBrush.Color)" Storyboard.TargetName="button_nextSearch">
                             <EasingColorKeyFrame KeyTime="0" Value="White"/>
                         </ColorAnimationUsingKeyFrames>
-                        <ColorAnimationUsingKeyFrames Storyboard.TargetProperty="(TextElement.Foreground).(SolidColorBrush.Color)" Storyboard.TargetName="cartesianPlane_checkBox">
-                            <EasingColorKeyFrame KeyTime="0" Value="White"/>
-                        </ColorAnimationUsingKeyFrames>
                         <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="(Panel.Background)" Storyboard.TargetName="grid">
                             <DiscreteObjectKeyFrame KeyTime="0">
                                 <DiscreteObjectKeyFrame.Value>
@@ -130,6 +198,9 @@
                                 </DiscreteObjectKeyFrame.Value>
                             </DiscreteObjectKeyFrame>
                         </ObjectAnimationUsingKeyFrames>
+                        <ColorAnimationUsingKeyFrames Storyboard.TargetProperty="(TextElement.Foreground).(SolidColorBrush.Color)" Storyboard.TargetName="button_MoreOption">
+                            <EasingColorKeyFrame KeyTime="0" Value="White"/>
+                        </ColorAnimationUsingKeyFrames>
                         <!--      <ColorAnimationUsingKeyFrames Storyboard.TargetProperty="(Panel.Background).(SolidColorBrush.Color)" Storyboard.TargetName="statusBar">
                             <EasingColorKeyFrame KeyTime="0" Value="Black"/>
                         </ColorAnimationUsingKeyFrames>
@@ -149,6 +220,7 @@
                 </VisualState>
             </VisualStateGroup>
         </VisualStateManager.VisualStateGroups>
+
         <StatusBar x:Name="statusBar" DockPanel.Dock="Bottom">
             <StatusBar.ItemsPanel>
                 <ItemsPanelTemplate>
@@ -199,13 +271,14 @@
                 <ColumnDefinition Width="7*"/>
             </Grid.ColumnDefinitions>
 
+            <!-- Main panel-->
             <Grid Grid.Column="0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <WindowsFormsHost Grid.Row="0">
+                <WindowsFormsHost x:Name="treeView_WinFormsHost" Grid.Row="0">
                     <local:TreeViewMS x:Name="DataTree" 
                                       AfterSelect="DataTree_AfterSelect"
                                       KeyDown="DataTree_KeyDown"
@@ -254,88 +327,104 @@
                   HorizontalAlignment="Stretch" VerticalAlignment="Stretch" 
                   ResizeBehavior="PreviousAndNext" />
 
+
             <Grid x:Name="grid" Grid.Column="2" Background="#FFF1F1F1">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="40"/>
-                    <RowDefinition Height="Auto" MaxHeight="300"/>
-                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="9.5*"/>
+                    <ColumnDefinition Width="0.5*"/>
+                </Grid.ColumnDefinitions>
 
-                <localSubPanels:ChangeableTextBox x:Name="nameBox" Grid.Row="0" 
-                                                  AcceptsReturn="False"
+                <!-- Text box -->
+                <sharedLib:ChangeableTextBox x:Name="nameBox" Grid.Row="0"
+                                                  AcceptsReturn="False" Margin="20,0,20,0"
                                                       ButtonClicked="nameBox_ButtonClicked"/>
-                <localSubPanels:ChangeableTextBox x:Name="textPropBox" Grid.Row="1" 
-                                                  TextWrap="Wrap" />
+                <sharedLib:ChangeableTextBox x:Name="textPropBox" Grid.Row="1" Height="40"
+                                                  TextWrap="Wrap" Margin="20,0,20,0" />
 
 
-                <Grid x:Name="grid1" Grid.Row="2">
-                    <WindowsFormsHost x:Name="fieldLimitPanelHost" Visibility="Collapsed">
-                        <localSubPanels:FieldLimitPanel x:Name="fieldLimitPanel1" />
+                <Grid x:Name="grid1" Grid.Row="2" Grid.RowSpan="2" Grid.ColumnSpan="2">
+                    <!-- Map.wz/../fieldLimit-->
+                    <WindowsFormsHost x:Name="fieldLimitPanelHost" Visibility="Collapsed" Margin="0,37,0,0">
+                        <sharedLib:FieldLimitPanel x:Name="fieldLimitPanel1" />
                     </WindowsFormsHost>
+
+                    <!-- Map.wz/../fieldType -->
+                    <sharedLib:FieldTypePanel x:Name="fieldTypePanel" Visibility="Collapsed"/>
+
                     <localSubPanels:XYPanel  x:Name="vectorPanel" Visibility="Collapsed"/>
 
-                    <localSubPanels:SoundPlayer x:Name="mp3Player" Visibility="Collapsed"/>
+                    <sharedLib:SoundPlayer x:Name="mp3Player" Visibility="Collapsed"/>
 
-                    <Grid x:Name="Grid_ImageDisplay" Margin="10">
+                    <!-- Lua script editor-->
+                    <localSubPanels:AvalonTextEditor x:Name="textEditor" Visibility="Collapsed"/>
 
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
+                    <!-- Image render -->
+                    <Grid x:Name="Grid_ImageRender" Margin="10">
+                        <localSubPanels:ImageRenderViewer x:Name="canvasPropBox"
+                                                          Margin="0,40,0,0"
+                                                          HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                                          Visibility="Collapsed"
+                                                         
+                                                          AllowDrop="True"
+                                                          DragEnter="canvasPropBox_DragEnter" DragLeave="canvasPropBox_DragLeave"
+                                                          Drop="canvasPropBox_Drop">
 
-
-                        <Grid Grid.Row="0" x:Name="Grid_ImageRender">
-                            <Image x:Name="canvasPropBox" Stretch="None" Margin="300,100,0,0"
-                               VerticalAlignment="Center" HorizontalAlignment="Center" Source="pack://siteoforigin:,,,/Resources/8800000_attack_10.png">
-                            </Image>
-
-                            <Grid x:Name="grid_planVisibility">
-                                <Grid x:Name="cartesianPlaneX" Height="2" Background="Gray" Visibility="Collapsed">
-                                    <Grid Background="White" Height="1"/>
-                                </Grid>
-                                <Grid x:Name="cartesianPlaneY" Width="2" Background="Gray" Visibility="Collapsed">
-                                    <Grid Background="White" Width="1"/>
-                                </Grid>
-                            </Grid>
-
-                            <!-- plane UI. Put this above the image -->
-                            <!-- Not done yet -->
-                            <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top" Margin="20"
-                                        Visibility="Collapsed">
-                                <CheckBox x:Name="cartesianPlane_checkBox" Content="Plane" 
-                                      Checked="cartesianPlane_checkBox_CheckUnchecked" Unchecked="cartesianPlane_checkBox_CheckUnchecked"/>
-                                <ComboBox x:Name="planePosition_comboBox" Width="100" SelectedIndex="0" 
-                                          SelectionChanged="planePosition_comboBox_SelectionChanged">
-                                    <ComboBoxItem Content="Center" Tag="Center"/>
-                                    <ComboBoxItem Content="Top" Tag="Top"/>
-                                    <ComboBoxItem Content="Bottom" Tag="Bottom"/>
-                                    <ComboBoxItem Content="Left" Tag="Left"/>
-                                    <ComboBoxItem Content="Right" Tag="Right"/>
-                                    <ComboBoxItem Content="Top-Left" Tag="Top-Left"/>
-                                    <ComboBoxItem Content="Top-Right" Tag="Top-Right"/>
-                                    <ComboBoxItem Content="Bottom-Left" Tag="Bottom-Left"/>
-                                    <ComboBoxItem Content="Bottom-Right" Tag="Bottom-Right"/>
-                                </ComboBox>
-                            </StackPanel>
-                        </Grid>
+                        </localSubPanels:ImageRenderViewer>
                     </Grid>
-
-                    <StackPanel VerticalAlignment="Bottom" HorizontalAlignment="Right"
-                                Margin="10">
-                        <Button Height="30" Width="150" Content="Animate (F5)" x:Name="button_animateSelectedCanvas" 
-                                Click="button_animateSelectedCanvas_Click_1"/>
-                        <Button Height="30" Width="150" Content="Change Image" x:Name="changeImageButton"
-                                Click="changeImageButton_Click"/>
-                        <Button Height="30" Width="150" Content="Change Sound" x:Name="changeSoundButton"
-                                Click="changeSoundButton_Click"/>
-                        <Button Height="30" Width="150" Content="Save Sound" x:Name="saveSoundButton" 
-                                Click="saveSoundButton_Click"/>
-                        <Button Height="30" Width="150" Content="Save Image" x:Name="saveImageButton"
-                                Click="saveImageButton_Click"/>
-                    </StackPanel>
                 </Grid>
+
+                <!-- Context menu -->
+                <Button x:Name="button_MoreOption" Content="..."  
+                        Width="40" Height="40" 
+                        Style="{DynamicResource ButtonStyle_MoreOption}"
+                        Margin="0,0,0,0"
+                        Grid.Row="0"  Grid.Column="1"
+                        Visibility="Visible"
+                                Click="button_MoreOption_Click" RenderTransformOrigin="0.5,0.5">
+                    <Button.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform/>
+                            <SkewTransform/>
+                            <RotateTransform/>
+                            <TranslateTransform/>
+                        </TransformGroup>
+                    </Button.RenderTransform>
+                    <Button.ContextMenu>
+                        <ContextMenu Name="cm" StaysOpen="true">
+                            <MenuItem Header="Animate (F5)" x:Name="menuItem_Animate" Click="MenuItem_Animate_Click"/>
+                            <MenuItem Header="Save image animation" x:Name="menuItem_saveImageAnimation" Click="MenuItem_saveImageAnimation_Click"/>
+                            <MenuItem Header="Change Image" x:Name="menuItem_changeImage" Click="MenuItem_changeImage_Click"/>
+                            <MenuItem Header="Change Sound" x:Name="menuItem_changeSound" Click="MenuItem_changeSound_Click"/>
+                            <MenuItem Header="Save Sound" x:Name="menuItem_saveSound" Click="MenuItem_saveSound_Click"/>
+                            <MenuItem Header="Save Image" x:Name="menuItem_saveImage" Click="menuItem_saveImage_Click"/>
+                            <MenuItem Header="Export file" x:Name="menuItem_exportFile" Click="menuItem_ExportFile_Click"/>
+                            <!--  <MenuItem Header="Save Sound">
+                                        <MenuItem Header="ReadMe.txt"/>
+                                        <MenuItem Header="Schedule.xls"/>
+                                    </MenuItem>-->
+                        </ContextMenu>
+                    </Button.ContextMenu>
+                </Button>
+
             </Grid>
+
+
+            <!-- Loading panel-->
+            <Grid x:Name="grid_LoadingPanel" Visibility="Collapsed"
+                      Grid.Column="0" Grid.ColumnSpan="3"
+                      Background="White">
+                <localSubPanels:LoadingPanel x:Name="loadingPanel" Height="350" Background="White"/>
+            </Grid>
+
         </Grid>
+
     </DockPanel>
+
 
 
 </UserControl>

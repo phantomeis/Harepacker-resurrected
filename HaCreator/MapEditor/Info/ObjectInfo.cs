@@ -7,6 +7,7 @@
 using HaCreator.MapEditor.Instance;
 using HaCreator.MapEditor.Instance.Shapes;
 using HaCreator.Wz;
+using MapleLib.Helpers;
 using MapleLib.WzLib;
 using MapleLib.WzLib.WzProperties;
 using MapleLib.WzLib.WzStructure;
@@ -44,9 +45,31 @@ namespace HaCreator.MapEditor.Info
 
         public static ObjectInfo Get(string oS, string l0, string l1, string l2)
         {
-            WzImageProperty objInfoProp = Program.InfoManager.ObjectSets[oS][l0][l1][l2];
+            if (!Program.InfoManager.ObjectSets.ContainsKey(oS))
+            {
+                string logError = string.Format("Background object Map.wz/Obj/{0}/{1}/{2}/{3} not found.", oS, l0, l1, l2);
+                MapleLib.Helpers.ErrorLogger.Log(ErrorLevel.IncorrectStructure, logError);
+                return null;
+            }
+            WzImageProperty objInfoProp = Program.InfoManager.ObjectSets[oS]?[l0]?[l1]?[l2];
+            if (objInfoProp == null)
+            {
+                string logError = string.Format("Background object Map.wz/Obj/{0}/{1}/{2}/{3} not found.", oS, l0, l1, l2);
+                MapleLib.Helpers.ErrorLogger.Log(ErrorLevel.IncorrectStructure, logError);
+                return null;
+            }
+
             if (objInfoProp.HCTag == null)
-                objInfoProp.HCTag = ObjectInfo.Load((WzSubProperty)objInfoProp, oS, l0, l1, l2);
+            {
+                try
+                {
+                    objInfoProp.HCTag = ObjectInfo.Load((WzSubProperty)objInfoProp, oS, l0, l1, l2);
+                }
+                catch (KeyNotFoundException)
+                {
+                    return null;
+                }
+            }
             return (ObjectInfo)objInfoProp.HCTag;
         }
 
@@ -71,10 +94,14 @@ namespace HaCreator.MapEditor.Info
             }
             else if (prop is WzSubProperty)
             {
-                foreach (WzConvexProperty offsetSet in prop.WzProperties)
+                try
                 {
-                    result.Add(ParsePropToOffsetList(offsetSet));
+                    foreach (WzConvexProperty offsetSet in prop.WzProperties)
+                    {
+                        result.Add(ParsePropToOffsetList(offsetSet));
+                    }
                 }
+                catch (InvalidCastException) { }
             }
             else
             {
@@ -86,7 +113,14 @@ namespace HaCreator.MapEditor.Info
         private static ObjectInfo Load(WzSubProperty parentObject, string oS, string l0, string l1, string l2)
         {
             WzCanvasProperty frame1 = (WzCanvasProperty)WzInfoTools.GetRealProperty(parentObject["0"]);
-            ObjectInfo result = new ObjectInfo(frame1.PngProperty.GetPNG(false), WzInfoTools.VectorToSystemPoint((WzVectorProperty)frame1["origin"]), oS, l0, l1, l2, parentObject);
+            ObjectInfo result = new ObjectInfo(
+                frame1.GetLinkedWzCanvasBitmap(),
+                WzInfoTools.PointFToSystemPoint(frame1.GetCanvasOriginPosition()),
+                oS,
+                l0,
+                l1,
+                l2,
+                parentObject);
             WzImageProperty chairs = parentObject["seat"];
             WzImageProperty ropes = frame1["rope"];
             WzImageProperty ladders = frame1["ladder"];

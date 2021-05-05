@@ -14,22 +14,17 @@ using System.IO.Pipes;
 using System.IO;
 using System.Security.Principal;
 using System.Globalization;
-using HaRepacker.Configuration;
+using MapleLib.Configuration;
 
 namespace HaRepacker
 {
     public static class Program
     {
-        public const string Version = "4.2.4";
-        public const int Version_ = 424;
-
-        public const int TimeStartAnimateDefault = 60;
-
-        public static WzFileManager WzMan = new WzFileManager();
+        public static WzFileManager WzFileManager = new WzFileManager();
         public static NamedPipeServerStream pipe;
         public static Thread pipeThread;
 
-        private static ConfigurationManager _ConfigurationManager = new ConfigurationManager(string.Empty); // default for VS UI designer
+        private static ConfigurationManager _ConfigurationManager; // default for VS UI designer
         public static ConfigurationManager ConfigurationManager
         {
             get { return _ConfigurationManager; }
@@ -59,7 +54,7 @@ namespace HaRepacker
             CultureInfo.DefaultThreadCurrentUICulture = ci;
 
             // Threads
-            ThreadPool.SetMaxThreads(Environment.ProcessorCount, Environment.ProcessorCount); // This includes hyper-threading(Intel)/SMT (AMD) count.
+            ThreadPool.SetMaxThreads(Environment.ProcessorCount * 3, Environment.ProcessorCount * 3); // This includes hyper-threading(Intel)/SMT (AMD) count.
 
             // App
             Application.EnableVisualStyles();
@@ -75,6 +70,11 @@ namespace HaRepacker
             EndApplication(true, true);
         }
 
+        /// <summary>
+        /// Allows customisation of display text during runtime..
+        /// </summary>
+        /// <param name="ci"></param>
+        /// <returns></returns>
         private static CultureInfo GetMainCulture(CultureInfo ci)
         {
             if (!ci.Name.Contains("-"))
@@ -116,6 +116,7 @@ namespace HaRepacker
             return our_folder;
         }
 
+
         public static bool IsUserAdministrator()
         {
             //bool value to hold our return value
@@ -136,12 +137,11 @@ namespace HaRepacker
 
         public static bool PrepareApplication(bool from_internal)
         {
-            _ConfigurationManager = new ConfigurationManager(GetLocalFolderPath());
+            _ConfigurationManager = new ConfigurationManager();
 
             bool loaded = _ConfigurationManager.Load();
             if (!loaded)
             {
-                Warning.Error(HaRepacker.Properties.Resources.ProgramLoadSettingsError);
                 return true;
             }
             bool firstRun = Program.ConfigurationManager.ApplicationSettings.FirstRun;
@@ -171,7 +171,7 @@ namespace HaRepacker
             }
             if (disposeFiles)
             {
-                WzMan.Terminate();
+                WzFileManager.Terminate();
             }
             _ConfigurationManager.Save();
         }

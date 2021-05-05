@@ -18,20 +18,23 @@ using MapleLib.WzLib.WzProperties;
 using HaCreator.MapEditor;
 using MapleLib.WzLib.WzStructure;
 using MapleLib.WzLib.WzStructure.Data;
+using HaCreator.GUI.InstanceEditor;
+using MapleLib.WzLib.WzStructure.Data.MapStructure;
 
 namespace HaCreator.GUI
 {
     public partial class InfoEditor : EditorBase
     {
         public MapInfo info;
-        private MultiBoard multiBoard;
-        private Board board;
+        private readonly MultiBoard multiBoard;
+        private readonly Board board;
 
         public InfoEditor(Board board, MapInfo info, MultiBoard multiBoard)
         {
             InitializeComponent();
 
             this.board = board;
+            this.info = info;
             this.multiBoard = multiBoard;
 
             timeLimitEnable.Tag = timeLimit;
@@ -61,14 +64,13 @@ namespace HaCreator.GUI
             autoLieDetectorEnable.Tag = new Control[] { autoLieEnd, autoLieInterval, autoLieProp, autoLieStart };
             allowedItemsEnable.Tag = new Control[] { allowedItems, allowedItemsAdd, allowedItemsRemove };
 
-            this.info = info;
             this.fieldType.SelectedIndex = 0;
 
             xBox.Value = board.MapSize.X;
             yBox.Value = board.MapSize.Y;
 
             List<string> sortedBGMs = new List<string>();
-            foreach (KeyValuePair<string, WzSoundProperty> bgm in Program.InfoManager.BGMs)
+            foreach (KeyValuePair<string, WzBinaryProperty> bgm in Program.InfoManager.BGMs)
                 sortedBGMs.Add(bgm.Key);
             sortedBGMs.Sort();
             foreach (string bgm in sortedBGMs)
@@ -100,9 +102,11 @@ namespace HaCreator.GUI
             streetBox.Text = info.strStreetName;
             categoryBox.Text = info.strCategoryName;
             markBox.SelectedItem = info.mapMark;
-            if (info.returnMap == info.id) cannotReturnCBX.Checked = true;
+            if (info.returnMap == info.id) 
+                cannotReturnCBX.Checked = true;
             else returnBox.Text = info.returnMap.ToString();
-            if (info.forcedReturn == 999999999) returnHereCBX.Checked = true;
+            if (info.forcedReturn == 999999999) 
+                returnHereCBX.Checked = true;
             else forcedRet.Text = info.forcedReturn.ToString();
             mobRate.Value = (decimal)info.mobRate;
             //LoadOptionalInt(info.link, linkBox);
@@ -132,7 +136,7 @@ namespace HaCreator.GUI
                 helpBox.Text = info.help.Replace(@"\n", "\r\n");
             if (info.timeMob != null)
             {
-                MapInfo.TimeMob tMob = (MapInfo.TimeMob)info.timeMob;
+                TimeMob tMob = (TimeMob)info.timeMob;
                 summonMobEnable.Checked = true;
                 LoadOptionalInt(tMob.startHour, timedMobStart, timedMobEnable);
                 LoadOptionalInt(tMob.endHour, timedMobEnd, timedMobEnable);
@@ -141,7 +145,7 @@ namespace HaCreator.GUI
             }
             if (info.autoLieDetector != null)
             {
-                MapInfo.AutoLieDetector ald = (MapInfo.AutoLieDetector)info.autoLieDetector;
+                AutoLieDetector ald = (AutoLieDetector)info.autoLieDetector;
                 autoLieDetectorEnable.Checked = true;
                 autoLieStart.Value = ald.startHour;
                 autoLieEnd.Value = ald.endHour;
@@ -177,11 +181,11 @@ namespace HaCreator.GUI
             optionsList.SetChecked(20, info.allMoveCheck);
             optionsList.SetChecked(21, info.VRLimit);
 
-            for (int i = 0; i < fieldLimitList.Items.Count; i++)
-            {
-                int value = (int)Math.Pow(2, i);
-                fieldLimitList.SetChecked(i, ((int)info.fieldLimit & value) == value);
-            }
+            // Populate field limit items
+            // automatically populated via fieldLimitPanel1.Loaed
+            fieldLimitPanel1.PopulateDefaultListView();
+            fieldLimitPanel1.UpdateFieldLimitCheckboxes((ulong) info.fieldLimit);
+
             if (info.fieldType != null)/* fieldType.SelectedIndex = -1;
             else*/
             {
@@ -274,14 +278,12 @@ namespace HaCreator.GUI
 
         private void bgmBox_SelectedIndexChanged(object sender, EventArgs e)
         {
-            fieldLimitList.CheckOnClick = true;
-            bool a = fieldLimitList.Checked(0);
-            soundPlayer.SoundProperty = Program.InfoManager.BGMs[(string)bgmBox.SelectedItem];
+            soundPlayer1.SoundProperty = Program.InfoManager.BGMs[(string)bgmBox.SelectedItem];
         }
 
         private void InfoEditor_FormClosing(object sender, FormClosingEventArgs e)
         {
-            soundPlayer.SoundProperty = null;
+            soundPlayer1.SoundProperty = null;
         }
 
         private void markBox_SelectedIndexChanged(object sender, EventArgs e)
@@ -311,7 +313,7 @@ namespace HaCreator.GUI
                     info.strCategoryName = categoryBox.Text;
 
                     // We do, however, need to change the tab's name/info
-                    board.TabPage.Text = info.strMapName;
+                    ((TabItemContainer)board.TabPage.Tag).Text = info.strMapName;
                 }
                 info.returnMap = cannotReturnCBX.Checked ? info.id : (int)returnBox.Value;
                 info.forcedReturn = returnHereCBX.Checked ? 999999999 : (int)forcedRet.Value;
@@ -340,13 +342,13 @@ namespace HaCreator.GUI
 
                 if (helpEnable.Checked) info.help = helpBox.Text.Replace("\r\n", @"\n");
                 if (summonMobEnable.Checked)
-                    info.timeMob = new MapInfo.TimeMob(
+                    info.timeMob = new TimeMob(
                         GetOptionalInt(timedMobStart, timedMobEnable),
                         GetOptionalInt(timedMobEnd, timedMobEnable),
                         (int)timedMobId.Value,
                         timedMobMessage.Text.Replace("\r\n", @"\n"));
                 if (autoLieDetectorEnable.Checked)
-                    info.autoLieDetector = new MapInfo.AutoLieDetector(
+                    info.autoLieDetector = new AutoLieDetector(
                         (int)autoLieStart.Value,
                         (int)autoLieEnd.Value,
                         (int)autoLieInterval.Value,
@@ -379,14 +381,8 @@ namespace HaCreator.GUI
                 info.zakum2Hack = optionsList.Checked(19);
                 info.allMoveCheck = optionsList.Checked(20);
                 info.VRLimit = optionsList.Checked(21);
-                int fieldLimitInt = 0;
-                for (int i = 0; i < fieldLimitList.Items.Count; i++)
-                {
-                    int value = (int)Math.Pow(2, i);
-                    if (fieldLimitList.Checked(i))
-                        fieldLimitInt += value;
-                }
-                info.fieldLimit = (FieldLimit)fieldLimitInt;
+                info.fieldLimit = (long) fieldLimitPanel1.FieldLimit;
+
                 if (fieldType.SelectedIndex <= 0x22)
                     info.fieldType = (FieldType)fieldType.SelectedIndex;
                 else
@@ -469,6 +465,28 @@ namespace HaCreator.GUI
         private void allowedItemsAdd_Click(object sender, EventArgs e)
         {
             allowedItems.Items.Add(Microsoft.VisualBasic.Interaction.InputBox("Insert item ID", "Add Allowed Item", "", -1, -1));
+        }
+
+        /// <summary>
+        /// Select field ID for return map
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void button_selectReturnMap_Click(object sender, EventArgs e)
+        {
+            LoadMapSelector selector = new LoadMapSelector(returnBox);
+            selector.ShowDialog();
+        }
+
+        /// <summary>
+        /// Select field ID for forced return map
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void button_selectForcedReturnMap_Click(object sender, EventArgs e)
+        {
+            LoadMapSelector selector = new LoadMapSelector(forcedRet);
+            selector.ShowDialog();
         }
     }
 }

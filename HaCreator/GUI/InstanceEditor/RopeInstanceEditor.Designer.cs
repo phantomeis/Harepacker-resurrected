@@ -64,7 +64,7 @@
             0,
             -2147483648});
             this.xInput.Name = "xInput";
-            this.xInput.Size = new System.Drawing.Size(50, 20);
+            this.xInput.Size = new System.Drawing.Size(50, 22);
             this.xInput.TabIndex = 0;
             // 
             // label1
@@ -72,7 +72,7 @@
             this.label1.AutoSize = true;
             this.label1.Location = new System.Drawing.Point(63, 37);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(14, 13);
+            this.label1.Size = new System.Drawing.Size(13, 13);
             this.label1.TabIndex = 2;
             this.label1.Text = "X";
             // 
@@ -81,7 +81,7 @@
             this.label2.AutoSize = true;
             this.label2.Location = new System.Drawing.Point(63, 63);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(14, 13);
+            this.label2.Size = new System.Drawing.Size(12, 13);
             this.label2.TabIndex = 4;
             this.label2.Text = "Y";
             // 
@@ -99,7 +99,7 @@
             0,
             -2147483648});
             this.yInput.Name = "yInput";
-            this.yInput.Size = new System.Drawing.Size(50, 20);
+            this.yInput.Size = new System.Drawing.Size(50, 22);
             this.yInput.TabIndex = 1;
             // 
             // okButton
@@ -127,7 +127,7 @@
             this.ladderBox.AutoSize = true;
             this.ladderBox.Location = new System.Drawing.Point(45, 86);
             this.ladderBox.Name = "ladderBox";
-            this.ladderBox.Size = new System.Drawing.Size(59, 17);
+            this.ladderBox.Size = new System.Drawing.Size(61, 17);
             this.ladderBox.TabIndex = 3;
             this.ladderBox.Text = "Ladder";
             // 
@@ -136,14 +136,14 @@
             this.ufBox.AutoSize = true;
             this.ufBox.Location = new System.Drawing.Point(45, 107);
             this.ufBox.Name = "ufBox";
-            this.ufBox.Size = new System.Drawing.Size(99, 17);
+            this.ufBox.Size = new System.Drawing.Size(109, 17);
             this.ufBox.TabIndex = 4;
             this.ufBox.Text = "Upper Foothold";
             // 
             // RopeInstanceEditor
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.ClientSize = new System.Drawing.Size(179, 167);
             this.Controls.Add(this.ufBox);
             this.Controls.Add(this.ladderBox);

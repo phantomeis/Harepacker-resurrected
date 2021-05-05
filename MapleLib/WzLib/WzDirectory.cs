@@ -19,6 +19,7 @@ using System.IO;
 using MapleLib.WzLib.Util;
 using System;
 using System.Diagnostics;
+using MapleLib.PacketLib;
 
 namespace MapleLib.WzLib
 {
@@ -107,12 +108,15 @@ namespace MapleLib.WzLib
         {
             get
             {
+                string nameLower = name.ToLower();
+
                 foreach (WzImage i in images)
-                    if (i.Name.ToLower() == name.ToLower())
+                    if (i.Name.ToLower() == nameLower)
                         return i;
                 foreach (WzDirectory d in subDirs)
-                    if (d.Name.ToLower() == name.ToLower())
+                    if (d.Name.ToLower() == nameLower)
                         return d;
+
                 //throw new KeyNotFoundException("No wz image or directory was found with the specified name");
                 return null;
             }
@@ -121,10 +125,10 @@ namespace MapleLib.WzLib
                 if (value != null)
                 {
                     value.Name = name;
-                    if (value is WzDirectory)
-                        AddDirectory((WzDirectory)value);
-                    else if (value is WzImage)
-                        AddImage((WzImage)value);
+                    if (value is WzDirectory directory)
+                        AddDirectory(directory);
+                    else if (value is WzImage image)
+                        AddImage(image);
                     else
                         throw new ArgumentException("Value must be a Directory or Image");
                 }
@@ -172,10 +176,17 @@ namespace MapleLib.WzLib
 
         /// <summary>
         /// Parses the WzDirectory
+        /// <paramref name="lazyParse">Only parses the first directory</paramref>
         /// </summary>
-        internal void ParseDirectory()
+        internal void ParseDirectory(bool lazyParse = false)
         {
+            //Debug.WriteLine(HexTool.ToString( reader.ReadBytes(20)));
+            //reader.BaseStream.Position = reader.BaseStream.Position - 20;
+
             int entryCount = reader.ReadCompressedInt();
+            if (entryCount < 0 || entryCount > 100000) // probably nothing > 100k folders for now.
+                throw new Exception("Invalid wz version used for decryption, try parsing other version numbers.");
+
             for (int i = 0; i < entryCount; i++)
             {
                 byte type = reader.ReadByte();
@@ -185,28 +196,35 @@ namespace MapleLib.WzLib
                 uint offset;
 
                 long rememberPos = 0;
-                if (type == 1) //01 XX 00 00 00 00 00 OFFSET (4 bytes) 
+                switch (type)
                 {
-                    int unknown = reader.ReadInt32();
-                    reader.ReadInt16();
-                    uint offs = reader.ReadOffset();
-                    continue;
-                }
-                else if (type == 2)
-                {
-                    int stringOffset = reader.ReadInt32();
-                    rememberPos = reader.BaseStream.Position;
-                    reader.BaseStream.Position = reader.Header.FStart + stringOffset;
-                    type = reader.ReadByte();
-                    fname = reader.ReadString();
-                }
-                else if (type == 3 || type == 4)
-                {
-                    fname = reader.ReadString();
-                    rememberPos = reader.BaseStream.Position;
-                }
-                else
-                {
+                    case 1:  //01 XX 00 00 00 00 00 OFFSET (4 bytes) 
+                        {
+                            int unknown = reader.ReadInt32();
+                            reader.ReadInt16();
+                            uint offs = reader.ReadOffset();
+                            continue;
+                        }
+                    case 2:
+                        {
+                            int stringOffset = reader.ReadInt32();
+                            rememberPos = reader.BaseStream.Position;
+                            reader.BaseStream.Position = reader.Header.FStart + stringOffset;
+                            type = reader.ReadByte();
+                            fname = reader.ReadString();
+                            break;
+                        }
+                    case 3:
+                    case 4:
+                        {
+                            fname = reader.ReadString();
+                            rememberPos = reader.BaseStream.Position;
+                            break;
+                        }
+                    default:
+                        {
+                            break;
+                        }
                 }
                 reader.BaseStream.Position = rememberPos;
                 fsize = reader.ReadCompressedInt();
@@ -214,21 +232,30 @@ namespace MapleLib.WzLib
                 offset = reader.ReadOffset();
                 if (type == 3)
                 {
-                    WzDirectory subDir = new WzDirectory(reader, fname, hash, WzIv, wzFile);
-                    subDir.BlockSize = fsize;
-                    subDir.Checksum = checksum;
-                    subDir.Offset = offset;
-                    subDir.Parent = this;
+                    WzDirectory subDir = new WzDirectory(reader, fname, hash, WzIv, wzFile)
+                    {
+                        BlockSize = fsize,
+                        Checksum = checksum,
+                        Offset = offset,
+                        Parent = this
+                    };
                     subDirs.Add(subDir);
+
+                    if (lazyParse)
+                        break;
                 }
                 else
                 {
-                    WzImage img = new WzImage(fname, reader);
-                    img.BlockSize = fsize;
-                    img.Checksum = checksum;
-                    img.Offset = offset;
-                    img.Parent = this;
+                    WzImage img = new WzImage(fname, reader, checksum)
+                    {
+                        BlockSize = fsize,
+                        Offset = offset,
+                        Parent = this
+                    };
                     images.Add(img);
+
+                    if (lazyParse)
+                        break;
                 }
             }
 
@@ -258,7 +285,7 @@ namespace MapleLib.WzLib
                 //wzImageNameTracking.Add(img.Name);
 
                 // Write 
-                if (img.changed)
+                if (img.bIsImageChanged)
                 {
                     fs.Position = img.tempFileStart;
 
@@ -286,10 +313,14 @@ namespace MapleLib.WzLib
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="fileName"></param>
+        /// <param name="useIv">The IV to use while generating the data file. If null, it'll use the WzDirectory default</param>
+        /// <param name="bIsWzUserKeyDefault">Uses the default MapleStory UserKey or a custom key.</param>
+        /// <param name="prevOpenedStream">The previously opened file stream</param>
         /// <returns></returns>
-		internal int GenerateDataFile(string fileName)
+		internal int GenerateDataFile(byte[] useIv, bool bIsWzUserKeyDefault, FileStream prevOpenedStream)
         {
+            bool useCustomIv = useIv != null; // whole shit gonna be re-written if its a custom IV specified
+
             size = 0;
             int entryCount = subDirs.Count + images.Count;
             if (entryCount == 0)
@@ -300,26 +331,25 @@ namespace MapleLib.WzLib
             size = WzTool.GetCompressedIntLength(entryCount);
             offsetSize = WzTool.GetCompressedIntLength(entryCount);
 
-            WzBinaryWriter imgWriter = null;
-            MemoryStream memStream = null;
-            FileStream fileWrite = new FileStream(fileName, FileMode.Append, FileAccess.Write);
-
             foreach (WzImage img in images)
             {
-                if (img.changed)
+                if (useCustomIv ||// everything needs to be re-written when a custom IV is used.
+                    !bIsWzUserKeyDefault || //  everything needs to be re-written when a custom UserKey is used too
+                    img.bIsImageChanged) // or when an image is changed
                 {
-                    memStream = new MemoryStream();
-                    imgWriter = new WzBinaryWriter(memStream, this.WzIv);
-                    img.SaveImage(imgWriter);
-                    img.checksum = 0;
-                    foreach (byte b in memStream.ToArray())
+                    using (MemoryStream memStream = new MemoryStream())
                     {
-                        img.checksum += b;
+                        using (WzBinaryWriter imgWriter = new WzBinaryWriter(memStream, useCustomIv ? useIv : this.WzIv))
+                        {
+                            img.SaveImage(imgWriter, bIsWzUserKeyDefault, useCustomIv);
+
+                            img.CalculateAndSetImageChecksum(memStream.ToArray()); // checksum
+
+                            img.tempFileStart = prevOpenedStream.Position;
+                            prevOpenedStream.Write(memStream.ToArray(), 0, (int)memStream.Length);
+                            img.tempFileEnd = prevOpenedStream.Position;
+                        }
                     }
-                    img.tempFileStart = fileWrite.Position;
-                    fileWrite.Write(memStream.ToArray(), 0, (int)memStream.Length);
-                    img.tempFileEnd = fileWrite.Position;
-                    memStream.Dispose();
                 }
                 else
                 {
@@ -339,23 +369,31 @@ namespace MapleLib.WzLib
                 offsetSize += WzTool.GetCompressedIntLength(imgLen);
                 offsetSize += WzTool.GetCompressedIntLength(img.Checksum);
                 offsetSize += 4;
-                if (img.changed)
-                    imgWriter.Close();
+
+                // otherwise Item.wz (300MB) probably uses > 4GB
+                if (useCustomIv || !bIsWzUserKeyDefault) // when using custom IV, or changing IVs, all images have to be re-read and re-written..
+                {
+                    GC.Collect(); // GC slows down writing of maps in HaCreator
+                    GC.WaitForPendingFinalizers();
+                }
+
+                //Debug.WriteLine("Writing image :" + img.FullPath);
             }
-            fileWrite.Close();
 
             foreach (WzDirectory dir in subDirs)
             {
                 int nameLen = WzTool.GetWzObjectValueLength(dir.name, 3);
                 size += nameLen;
-                size += dir.GenerateDataFile(fileName);
+                size += dir.GenerateDataFile(useIv, bIsWzUserKeyDefault, prevOpenedStream);
                 size += WzTool.GetCompressedIntLength(dir.size);
-                size += WzTool.GetCompressedIntLength(dir.checksum);
+                size += WzTool.GetCompressedIntLength(dir.Checksum);
                 size += 4;
                 offsetSize += nameLen;
                 offsetSize += WzTool.GetCompressedIntLength(dir.size);
-                offsetSize += WzTool.GetCompressedIntLength(dir.checksum);
+                offsetSize += WzTool.GetCompressedIntLength(dir.Checksum);
                 offsetSize += 4;
+
+                //Debug.WriteLine("Writing dir :" + dir.FullPath);
             }
             return size;
         }
@@ -457,11 +495,15 @@ namespace MapleLib.WzLib
             }
         }
 
-        internal void SetHash(uint newHash)
+        /// <summary>
+        /// Sets the version hash of the directory (see WzFile.CreateVersionHash() )
+        /// </summary>
+        /// <param name="newHash"></param>
+        internal void SetVersionHash(uint newHash)
         {
             this.hash = newHash;
             foreach (WzDirectory dir in subDirs)
-                dir.SetHash(newHash);
+                dir.SetVersionHash(newHash);
         }
 
         /// <summary>

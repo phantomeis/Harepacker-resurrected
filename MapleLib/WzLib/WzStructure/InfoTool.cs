@@ -29,7 +29,7 @@ namespace MapleLib.WzLib.WzStructure
     {
         public static string GetString(WzImageProperty source)
         {
-            return source.GetString();
+            return source == null ? null : source.GetString();
         }
 
         public static WzStringProperty SetString(string value)
@@ -49,7 +49,7 @@ namespace MapleLib.WzLib.WzStructure
 
         public static double GetDouble(WzImageProperty source)
         {
-            return source.GetDouble();
+            return source == null ? 0 : source.GetDouble();
         }
 
         public static WzDoubleProperty SetDouble(double value)
@@ -57,9 +57,9 @@ namespace MapleLib.WzLib.WzStructure
             return new WzDoubleProperty("", value);
         }
 
-        public static int GetInt(WzImageProperty source)
+        public static int GetInt(WzImageProperty source, int default_ = 0)
         {
-            return source.GetInt();
+            return source == null ? default_ : source.GetInt();
         }
 
         public static WzIntProperty SetInt(int value)
@@ -67,9 +67,9 @@ namespace MapleLib.WzLib.WzStructure
             return new WzIntProperty("", value);
         }
 
-        public static int? GetOptionalInt(WzImageProperty source)
+        public static int? GetOptionalInt(WzImageProperty source, int? default_ = null)
         {
-            return source == null ? (int?)null : source.GetInt();
+            return source == null ? (int?)default_ : source.GetInt();
         }
 
         public static WzIntProperty SetOptionalInt(int? value)
@@ -77,8 +77,32 @@ namespace MapleLib.WzLib.WzStructure
             return value.HasValue ? SetInt(value.Value) : null;
         }
 
+        #region Long
+        public static long GetLong(WzImageProperty source)
+        {
+            return source.GetLong();
+        }
+
+        public static WzLongProperty SetLong(long value)
+        {
+            return new WzLongProperty("", value);
+        }
+
+        public static long? GetOptionalLong(WzImageProperty source)
+        {
+            return source == null ? (long?)null : source.GetLong();
+        }
+
+        public static WzLongProperty SetOptionalLong(long? value)
+        {
+            return value.HasValue ? SetLong(value.Value) : null;
+        }
+        #endregion
+
         public static bool GetBool(WzImageProperty source)
         {
+            if (source == null) 
+                return false;
             return source.GetInt() == 1;
         }
 
@@ -100,7 +124,7 @@ namespace MapleLib.WzLib.WzStructure
 
         public static float GetFloat(WzImageProperty source)
         {
-            return source.GetFloat();
+            return source == null ? 0 : source.GetFloat();
         }
 
         public static WzFloatProperty SetFloat(float value)

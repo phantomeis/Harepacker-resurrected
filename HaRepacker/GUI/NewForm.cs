@@ -8,7 +8,8 @@ using System;
 using System.Windows.Forms;
 using MapleLib.WzLib;
 using HaRepacker.GUI.Panels;
-using HaRepacker.Configuration;
+using MapleLib.MapleCryptoLib;
+using System.Linq;
 
 namespace HaRepacker.GUI
 {
@@ -16,15 +17,68 @@ namespace HaRepacker.GUI
     {
         private MainPanel panel;
 
+        private bool bIsLoading;
         public NewForm(MainPanel panel)
         {
             this.panel = panel;
             InitializeComponent();
 
-            MainForm.AddWzEncryptionTypesToComboBox(encryptionBox);
+            Load += NewForm_Load;
+        }
 
-            encryptionBox.SelectedIndex = (int)Program.ConfigurationManager.ApplicationSettings.MapleVersion;
-            versionBox.Value = 1;
+        /// <summary>
+        /// Process command key on the form
+        /// </summary>
+        /// <param name="msg"></param>
+        /// <param name="keyData"></param>
+        /// <returns></returns>
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            // ...
+            if (keyData == (Keys.Escape))
+            {
+                Close(); // exit window
+                return true;
+            }
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
+
+
+        private void NewForm_Load(object sender, EventArgs e)
+        {
+            bIsLoading = true;
+            try
+            {
+                MainForm.AddWzEncryptionTypesToComboBox(encryptionBox);
+
+                encryptionBox.SelectedIndex = MainForm.GetIndexByWzMapleVersion(Program.ConfigurationManager.ApplicationSettings.MapleVersion, true);
+                versionBox.Value = 1;
+            } finally
+            {
+                bIsLoading = false;
+            }
+        }
+
+        /// <summary>
+        /// On combobox selection changed
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void EncryptionBox_SelectionChanged(object sender, EventArgs e)
+        {
+            if (bIsLoading)
+                return;
+
+            int selectedIndex = encryptionBox.SelectedIndex;
+            WzMapleVersion wzMapleVersion = MainForm.GetWzMapleVersionByWzEncryptionBoxSelection(selectedIndex);
+            if (wzMapleVersion == WzMapleVersion.CUSTOM)
+            {
+                CustomWZEncryptionInputBox customWzInputBox = new CustomWZEncryptionInputBox();
+                customWzInputBox.ShowDialog();
+            } else
+            {
+                MapleCryptoConstants.UserKey_WzLib = MapleCryptoConstants.MAPLESTORY_USERKEY_DEFAULT.ToArray();
+            }
         }
 
         /// <summary>
@@ -32,7 +86,7 @@ namespace HaRepacker.GUI
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void listwz_CheckedChanged(object sender, EventArgs e)
+        private void Listwz_CheckedChanged(object sender, EventArgs e)
         {
             copyrightBox.Enabled = true;
             versionBox.Enabled = true;
